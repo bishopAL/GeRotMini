@@ -22,11 +22,6 @@ else()
 set( DYNAMIXELLIB "dxl_sbc_cpp")
 endif()
 
-file(GLOB DYNAMIXEL_SRC
-     "./src/dynamixel/*.cpp"
-     "./src/dynamixel/*.c"
-)
-
 file(GLOB INA219_SRC
      "./src/INA219/*.cpp"
      "./src/INA219/*.c"
@@ -42,6 +37,5 @@ file(GLOB MAIN
      "./src/*.c"
 )
 
-ADD_EXECUTABLE(test ${MAIN} ${SVPUMPIMU_SRC} ${DYNAMIXEL_SRC} ${INA219_SRC} ) 
+ADD_EXECUTABLE(test ${MAIN} ${SVPUMPIMU_SRC} ${INA219_SRC} ) 
 target_link_libraries(test -lwiringPi)
-target_link_libraries(test ${DYNAMIXELLIB} )

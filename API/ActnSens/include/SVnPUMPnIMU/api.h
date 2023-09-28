@@ -19,6 +19,7 @@
 #include <i2c.h>
 #include <string>
 #include "wit_c_sdk.h"
+#include "GestionINA219.h"
 
 #define I2C_ADD_PCF 0x20
 #define ACC_UPDATE		0x01
@@ -49,12 +50,15 @@ class API
 public:
     API();
     ~API();
+    GestionINA219 ina219;
     static int fd;
     u8 sendValue[2];
     float fAcc[3], fGyro[3], fAngle[3];
+    float busVoltage, current, power;
     void setSV(u8 value); //3 position control; 0 current control
     void setPump(u8 num, u8 status);
     void updateIMU();
+    void updatePowerStatus();
     
 };
 

@@ -21,6 +21,9 @@ API::API()
 	WitRegisterCallBack(CopeSensorData);
 	WitDelayMsRegister(Delayms);
     AutoScanSensor();
+    ina219.init(ADDR_40);
+    ina219.reset();
+    ina219.setCalibration_0_4A(_16V, B_12Bits_128S_69MS, S_12Bits_128S_69MS, ShuntAndBusVoltageContinuous);
 }
 
 API::~API()
@@ -73,6 +76,20 @@ void API::updateIMU()
         cout<<fAngle[0]<<", "<<fAngle[1]<<", "<<fAngle[2]<<endl;
         #endif
     }
+}
+
+void API::updatePowerStatus()
+{
+    bool conversion = false;
+    while(!conversion){
+        conversion  = ina219.isConversionOk();
+    }
+    busVoltage = ina219.getBusVoltage_V();
+    current  = ina219.getCurrent_mA();
+    power  = ina219.getPower_W();
+    #ifdef DATALOG
+    cout<<busVoltage<<", "<<current<<", "<<power<<endl;
+    #endif
 }
 
 static int i2c_read(u8 addr, u8 reg, u8 *data, u32 len)
