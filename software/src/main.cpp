@@ -1,15 +1,16 @@
 #include "i2c.h"
+#include "dynamixel.h"
 #include "api.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <wiringPi.h> 
+#include "MotionControl.hpp"
 
 
-
-#define LF	1
-#define RF	24
-#define LH	28
-#define RH	29
+#define LF_PIN	1
+#define RF_PIN	24
+#define LH_PIN	28
+#define RH_PIN	29
 
 int main()
 {

@@ -1,17 +1,22 @@
 cmake_minimum_required(VERSION 2.8.9)
+PROJECT(robot)
 
-PROJECT(sensors)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+# include directories
 include_directories(${PROJECT_SOURCE_DIR}/include/dynamixel)
 include_directories(${PROJECT_SOURCE_DIR}/include/INA219)
 include_directories(${PROJECT_SOURCE_DIR}/include/SVnPUMPnIMU)
+include_directories(${PROJECT_SOURCE_DIR}/include/MotionControl)
 include_directories(/usr/local/include/)
 include_directories(/usr/include/ )
+
+# link directories
 link_directories("/usr/local/lib")
 link_directories("/usr/lib")
 
+# identify the processor, mark "DYNAMIXELLIB"
 message("CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME} ")
 message("CMAKE_HOST_SYSTEM_PROCESSOR: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
@@ -32,10 +37,15 @@ file(GLOB SVPUMPIMU_SRC
      "./src/SVnPUMPnIMU/*.c"
 )
 
+file(GLOB MOTIONCONTROL_SRC
+     "./src/MotionControl/*.cpp"
+     "./src/MotionControl/*.c"
+)
+
 file(GLOB MAIN
      "./src/*.cpp"
      "./src/*.c"
 )
 
-ADD_EXECUTABLE(test ${MAIN} ${SVPUMPIMU_SRC} ${INA219_SRC} ) 
-target_link_libraries(test -lwiringPi)
+ADD_EXECUTABLE(test ${MAIN} ${SVPUMPIMU_SRC} ${INA219_SRC} ${MOTIONCONTROL_SRC}) 
+target_link_libraries(test -lwiringPi ${DYNAMIXELLIB})
