@@ -1,5 +1,10 @@
 #include "MotionControl.hpp"
 
+#define LF_PIN	1
+#define RF_PIN	24
+#define LH_PIN	28
+#define RH_PIN	29
+
 #define ForceLPF  0.9
 #define StepHeight  (30.0/1000.0)
 #define TimeHeight (2.0/4.0)  // time for trajectory within vertical part
@@ -487,7 +492,7 @@ void MotionControl::nextStep()
         //cout<<"legNum_"<<(int)legNum<<":"<<stepFlag[legNum]<<"  ";
     }
 
-    
+    air_control();
     for(uint8_t legNum=0; legNum<4; legNum++)
     {
         if(stepFlag[legNum] != stance) timePresentForSwing(legNum) += timePeriod;
@@ -495,6 +500,31 @@ void MotionControl::nextStep()
     }
     timePresent += timePeriod;
 }
+//robot's air control & imu update
+void MotionControl::pumpAllNegtive(uint8_t legNum)
+{
+    svStatus=0b00000000;
+    api.setSV(svStatus);
+}
+void MotionControl::pumpAllPositve(uint8_t legNum)
+{
+    svStatus=0b11111111;
+    api.setSV(svStatus);
+}
+void MotionControl::pumpPositive(uint8_t legNum)
+{
+    svStatus=svStatus|(0b00000011<<((3-legNum)<<1));
+    api.setSV(svStatus);
+}
+void MotionControl::pumpNegtive(uint8_t legNum)
+{   
+    svStatus=svStatus&!(0b00000011<<((3-legNum)<<1))
+    api.setSV(svStatus);
+}
+/**
+ * @brief control SV to ensure that robot has a suitable positive and negative pressure state to adhere to the wall
+ * 
+ */
 void MotionControl::air_control()
 {
     for(int legNum=0;legNum<4;legNum++)
@@ -511,6 +541,10 @@ void MotionControl::air_control()
     }
 
 }
+
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 //                                          IMPControl
 //////////////////////////////////////////////////////////////////////////////
@@ -574,6 +608,9 @@ void IMPControl::updateTargTor(Matrix<float, 3, 4> force)
  */
 void IMPControl::impParaDeliver()
 {
+    #ifdef  VMCCONTROL
+    calVmcCom();
+    #else
     target_pos = legCmdPos;
     for(uint8_t legNum=0; legNum<4; legNum++)
     {   
@@ -601,6 +638,9 @@ void IMPControl::impParaDeliver()
            // target_force.row(legNum) << -0.6, 0, -1.6;    
         }
     }
+    #endif
+
+    
     // target_force<< 
     // 0, 0, -1.0,
     // 0, 0, -1.0,
@@ -723,6 +763,10 @@ void IMPControl::impChangePara(Matrix<float, 4, 3> mK, Matrix<float, 4, 3> mB, M
     }
 
 }
+/**
+ * @brief Update imu information
+ * 
+ */
   void IMPControl::updateImuData()
   {
     Matrix<float,3,1> preOmegaBase;preOmegaBase<<0.0,0.0,0.0;

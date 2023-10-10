@@ -1,14 +1,24 @@
 #ifndef robotMotionControl_H
 #define robotMotionControl_H
-
+#define VMCCONTROL
 #include <iostream>
 #include <vector>
 #include <Eigen/Core>
-#include <qpOASES.hpp>
 #include <time.h>
 #include <sys/mman.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <map>
+#include <string>
+#include "i2c.h"
+#include "dynamixel.h"
+#include "api.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <wiringPi.h> 
+#ifdef  VMCCONTROL
+  #include <qpOASES.hpp>
+#endif
 using namespace Eigen;
 using namespace std;
 class MotionControl{
@@ -23,7 +33,7 @@ public:
         Matrix<float, 4, 3> targetCoMPosition;  // X, Y , alpha in world cordinate
         Matrix<float, 4, 3> targetCoMPosture;
         float yawVelocity;   // yaw velocity from imu
-        enum _stepFlag{stance=0, swing, detach, attach}stepFlag[4];  //  0-stance, 1-swing, 2-detach, 3-attach: LF, RF, LH, RH
+        enum _stepFlag{stance=0, swing, detach, attach}stepFlag;  //  0-stance, 1-swing, 2-detach, 3-attach: LF, RF, LH, RH>
         Vector<float, 4> timePresentForSwing;
         float L1, L2, L3;  // The length of L
         float width, length,height,mass;
@@ -58,6 +68,9 @@ public:
         void forwardKinematics(int mode);
         void inverseKinematics(Matrix<float, 4, 3> cmdpos);   // standing state
         void updateFtsPresVel(); 
+        //robot control
+        uint8_t svStatus=0b00000000;
+        API api;
         void air_control();
         void pumpNegtive(int legNum);
         void pumpPositive(int legNum);
