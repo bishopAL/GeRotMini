@@ -32,6 +32,11 @@ file(GLOB INA219_SRC
      "./src/INA219/*.c"
 )
 
+file(GLOB DYNAMIXEL_SRC
+	"./src/dynamixel/*.cpp"
+	"./src/dynamixel/*.c"
+	)
+
 file(GLOB SVPUMPIMU_SRC
      "./src/SVnPUMPnIMU/*.cpp"
      "./src/SVnPUMPnIMU/*.c"
@@ -42,10 +47,17 @@ file(GLOB MOTIONCONTROL_SRC
      "./src/MotionControl/*.c"
 )
 
-file(GLOB MAIN
-     "./src/*.cpp"
-     "./src/*.c"
+file(GLOB MAIN_
+     "./src/main.cpp"
 )
 
-ADD_EXECUTABLE(test ${MAIN} ${SVPUMPIMU_SRC} ${INA219_SRC} ${MOTIONCONTROL_SRC}) 
+file(GLOB TEST
+	"./src/test.cpp"
+)
+
+# ADD_EXECUTABLE(main ${MAIN} ${SVPUMPIMU_SRC} ${INA219_SRC} ${MOTIONCONTROL_SRC}) 
+ADD_EXECUTABLE(test ${TEST} ${SVPUMPIMU_SRC} ${INA219_SRC} ${DYNAMIXEL_SRC}) 
+# ADD_EXECUTABLE(test ${TEST} ${SVPUMPIMU_SRC} ${INA219_SRC} ${MOTIONCONTROL_SRC}) 
+
+# target_link_libraries(main -lwiringPi ${DYNAMIXELLIB})
 target_link_libraries(test -lwiringPi ${DYNAMIXELLIB})
