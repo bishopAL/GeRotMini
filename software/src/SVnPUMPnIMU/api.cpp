@@ -34,7 +34,7 @@ API::~API()
 /**
  * @brief a function to set solid valves' status
  * 
- * @param value a value int number, sequencing at LF0-LF1-RF0-RF1-LH0-LH1-RH0-RH1, like 01100110
+ * @param value a value int number, sequencing at LF0-LF1-LH0-LH1-RH0-RH1-RF0-RF1, like 01100110
  */
 void API::setSV(u8 value)
 {
