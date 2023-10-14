@@ -1,2 +1,4 @@
 *.vscode
 *.a
+./src/MotionControl/MotionControl.cpp
+./include/MotionControl/MotionControl.hpp

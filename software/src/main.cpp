@@ -1,29 +1,5 @@
-
-
-
-#include <iostream>
-#include <vector>
-#include <Eigen/Core>
-#include <qpOASES.hpp>
-#include <time.h>
-#include <sys/mman.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include "i2c.h"
-#include "dynamixel.h"
-#include "api.h"
-#include <stdio.h>
-#include <wiringPi.h> 
-#include "MotionControl.hpp"
-#include <iostream>
-#include <fstream>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/time.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <pthread.h>
+#include"head.h"
+#include"robotcontrol.h"
 
 using namespace std;
 #define THREAD1_ENABLE 1
@@ -40,27 +16,12 @@ using namespace std;
 #define TimePeriod 0.05
 #define TimeForGaitPeriod 6
 
-// lcm::LCM Lcm;
-// robotCommand::robotCommand rc;
-// robotState::robotState rs;
-// impPara::impPara ip;
- IMPControl imp;
-// ImpParaHandler ipHandle;
-// RobotStateHandler rsHandle;
-
-// vector<int> ID = {  
-// 0,1,2,
-// 3, 4, 5,
-// 6,7,8
-// ,9,10,11
-// };
-//DxlAPI motors("/dev/ttyUSB0", 1000000, ID, 1);  //3000000  cannot hold 6 legs ttyUSB0 ttyAMA0
-vector<float> SetPos(12), SetTorque(12);
-
+RobotControl rbt(ADMITTANCE)
+rbt=new Gebot(120,60,20,500);
 
 void *robotStateUpdateSend(void *data)
 {
-    Matrix<float, 4, 2>TimeForStancePhase;
+    Matrix<float, 4, 2>TimeForSwingPhase;
     Matrix<float, 4, 3> InitPos;
     Vector<float, 3> TCV={ VELX, 0, 0 };// X, Y , alpha 
     
@@ -80,26 +41,26 @@ void *robotStateUpdateSend(void *data)
         {
             float_init_Motor_angle[i*3+j] = float_init_Motor_angle[i*3+j] * 3.1416/180; //to rad
             init_Motor_angle[i*3+j] = float_init_Motor_angle[i*3+j];      //vector
-            imp.jointCmdPos(i,j) = float_init_Motor_angle[i*3+j];            //imp.forwardKinematics
+            rbt.jointCmdPos(i,j) = float_init_Motor_angle[i*3+j];            //rbt.forwardKinematics
             //cout<<init_Motor_angle[i*3+j]<<endl;
         }
-    imp.forwardKinematics(0);
-    imp.setInitPos(imp.legCmdPos);        //legCmdPos
-    cout<<"legCmdPos:\n"<<imp.legCmdPos<<endl ;
+    rbt.forwardKinematics(0);
+    rbt.setInitPos(rbt.legCmdPos);        //legCmdPos
+    cout<<"legCmdPos:\n"<<rbt.legCmdPos<<endl ;
 
     motors.setPosition(init_Motor_angle);
 #endif    
     
-    //      imp initial
+    //      rbt initial
     // TimeForStancePhase<< 0,                       TimeForGaitPeriod/2.0,     // diagonal
     //                      TimeForGaitPeriod/2.0,   TimeForGaitPeriod, 
     //                      TimeForGaitPeriod/2.0,   TimeForGaitPeriod, 
     //                      0,                       TimeForGaitPeriod/2.0;
-    TimeForStancePhase<< TimeForGaitPeriod/4.0 *3,          TimeForGaitPeriod/4.0 *2,   // tripod
-                         TimeForGaitPeriod/4.0,             TimeForGaitPeriod,
-                         TimeForGaitPeriod - TimePeriod,    TimeForGaitPeriod/4.0 *3,
-                         TimeForGaitPeriod/4.0 *2,          TimeForGaitPeriod/4.0;
-    imp.setPhase(TimePeriod, TimeForGaitPeriod, TimeForStancePhase);
+    TimeForSwingPhase<< TimeForGaitPeriod/4.0 *2,          TimeForGaitPeriod/4.0 *3,   // tripod
+                         0,             TimeForGaitPeriod/4.0,
+                         TimeForGaitPeriod/4.0 *3,    TimeForGaitPeriod-TimePeriod,
+                         TimeForGaitPeriod/4.0  ,          TimeForGaitPeriod/4.0 *2;
+    rbt.setPhase(TimePeriod, TimeForGaitPeriod, TimeForSwingPhase);
 
 #if(INIMODE==2)
     float  float_initPos[12];
@@ -110,38 +71,16 @@ void *robotStateUpdateSend(void *data)
             InitPos(i, j) = float_initPos[i*3+j];
             //cout<<InitPos(i, j)<<endl;
         }
-    imp.setInitPos(InitPos);
+    rbt.setInitPos(InitPos);
 #endif
 
-    imp.setCoMVel(TCV);
-    imp.inverseKinematics(imp.legCmdPos);
+    rbt.setCoMVel(TCV);
+    rbt.inverseKinematics(rbt.legCmdPos);
 #if(INIMODE==2)  
-    for(int i=0; i<4; i++)
-        for(int j=0;j<3;j++)
-        {
-           
-            SetPos[i*3+j] = imp.jointCmdPos(i,j);
-            cout<<"SetPos:"<<SetPos[i*3+j] <<endl;
-            if( isnanf(SetPos[i*3+j]) )
-                SetPos[i*3+j] = 0;
-        }
-    motors.setPosition(SetPos);     
+    rbt.setPos(rbt.jointCmdPos);
 #endif
-
-
-    // ofstream outputfile;
-    // outputfile.open("../include/output.csv");
-    // for(int i=0; i<4; i++)
-    // {
-    //     for(int j=0;j<3;j++)
-    //         outputfile<<imp.jointCmdPos(i,j)<<" ";
-    //     outputfile<<endl;
-    // }
-    // outputfile.close();
-
-
-    imp.target_pos = imp.legCmdPos;
-    imp.initFlag = 1;
+    rbt.target_pos = rbt.legCmdPos;
+    rbt.initFlag = 1;
     usleep(1e5);
     while(1)
     {
@@ -150,10 +89,9 @@ void *robotStateUpdateSend(void *data)
         gettimeofday(&startTime,NULL);
 
         //If stay static, annotate below one line.
-        imp.nextStep();//
-        imp.impParaDeliver();
-        imp.air_control();
-        // cout<<"legCmdPos:\n"<<imp.legCmdPos<<endl;
+        rbt.nextStep();//
+        rbt.paraDeliver();
+        // cout<<"legCmdPos:\n"<<rbt.legCmdPos<<endl;
 
         gettimeofday(&endTime,NULL);
         timeUse = 1e6*(endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
@@ -172,7 +110,7 @@ void *runImpCtller(void *data)
     double timeUse;
     int run_times=0;    // for debugging
 
-    while(imp.initFlag == 0) //wait for initial
+    while(rbt.initFlag == 0) //wait for initial
         usleep(1e2);
     usleep(1e5);
     while (1)
@@ -181,60 +119,33 @@ void *runImpCtller(void *data)
         /* get motors data  */
         while( motors.getTorque()==false || motors.getPosition()==false || motors.getVelocity()==false );
         /* update the data IMP need */
-        imp.updatejointPresPos(motors.present_position);         
-        imp.updatejointPresVel(motors.present_velocity);
-        imp.forwardKinematics(1);
-        imp.updateJacobians();
-        imp.updateFtsPresVel();
+        rbt.updatejointPresPos();         
+        rbt.updatejointPresVel();
+        rbt.forwardKinematics(1);
+        rbt.updateJacobians();
+        rbt.updateFtsPresVel();
 
-        imp.updateFtsPresForce(motors.present_torque);  
+        rbt.updateFtsPresForce();  
 
-        // imp.inverseKinematics(imp.target_pos); //    within impCtller
-        imp.target_pos<<imp.initFootPos;
-        imp.impCtller(1);   
-        imp.inverseKinematics(imp.xc);   //    Admittance control
+        // rbt.inverseKinematics(rbt.target_pos); //    within rbtCtller
+        rbt.target_pos<<rbt.initFootPos;
+        rbt.control();   
+        rbt.inverseKinematics(rbt.xc);   //    Admittance control
         
-        // cout<<"target_pos: \n"<<imp.target_pos<<endl;
-        cout<<"legPresPos: \n"<<imp.legPresPos<<"; \nxc: \n"<<imp.xc<<endl;
-        cout<<"force:"<<endl<<imp.force.transpose()<<endl;
-        // cout<<"xc_dotdot: \n"<<imp.xc_dotdot<<"; \nxc_dot: \n"<<imp.xc_dot<<"; \nxc: \n"<<imp.xc<<endl;
-        // cout<<"legPresPos: \n"<<imp.legPresPos<<endl;
+        // cout<<"target_pos: \n"<<rbt.target_pos<<endl;
+        cout<<"legPresPos: \n"<<rbt.legPresPos<<"; \nxc: \n"<<rbt.xc<<endl;
+        cout<<"force:"<<endl<<rbt.force.transpose()<<endl;
+        // cout<<"xc_dotdot: \n"<<rbt.xc_dotdot<<"; \nxc_dot: \n"<<rbt.xc_dot<<"; \nxc: \n"<<rbt.xc<<endl;
+        // cout<<"legPresPos: \n"<<rbt.legPresPos<<endl;
         cout<<endl;
 
         /*      Admittance control      */
-        for(int i=0; i<4; i++)  
-            for(int j=0;j<3;j++)
-            {
-                if( isnanf(imp.jointCmdPos(i,j)) )            
-                {
-                    imp.jointCmdPos(i,j) = SetPos[i*3+j];   // last
-                    cout<<"-------------motor_angle_"<<i*3+j<<" NAN-----------"<<endl;
-                    // cout<<"target_pos: \n"<<imp.target_pos<<"; \nxc: \n"<<imp.xc<<endl;
-                    exit(0);
-                }
-                else
-                {
-                    if(imp.jointCmdPos(i,j) - SetPos[i*3+j] > MORTOR_ANGLE_AMP)
-                    {
-                        SetPos[i*3+j] += MORTOR_ANGLE_AMP;
-                        cout<<"-------------motor_angle_"<<i*3+j<<" +MAX-----------"<<endl;
-                    }
-                    else if(imp.jointCmdPos(i,j) - SetPos[i*3+j] < -MORTOR_ANGLE_AMP)
-                    {
-                        SetPos[i*3+j] -= MORTOR_ANGLE_AMP;
-                        cout<<"-------------motor_angle_"<<i*3+j<<" -MAX-----------"<<endl;
-                    }
-                    else 
-                        SetPos[i*3+j] = imp.jointCmdPos(i,j);   // now
-                }
-                //cout<<"motor_angle_"<<i*3+j<<": "<<SetPos[i*3+j]<<"  ";
-            }   
-        motors.setPosition(SetPos); 
+        rbt.setPos(rbt.jointCmdPos);
 
         /*      Impedance control      */
         // for(int i=0; i<4; i++)  
         //     for(int j=0;j<3;j++)
-        //         SetTorque[i*3+j] = imp.target_torque(j,i);
+        //         SetTorque[i*3+j] = rbt.target_torque(j,i);
         // motors.setTorque(SetTorque); 
 
         gettimeofday(&endTime,NULL);
