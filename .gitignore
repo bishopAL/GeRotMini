@@ -1,7 +1,7 @@
 *.vscode
 <<<<<<< HEAD
-./src/MotionControl/MotionControl.cpp
-./include/MotionControl/MotionControl.hpp
+./software/src/MotionControl/MotionControl.cpp
+./software/include/MotionControl/MotionControl.hpp
 =======
 build
 >>>>>>> origin/master
