@@ -84,7 +84,7 @@ void *robotStateUpdateSend(void *data)
 
         //If stay static, annotate below one line.
         rbt.NextStep();//
-        rbt.ParaDeliver();
+        //rbt.ParaDeliver();
         // cout<<"legCmdPos:\n"<<rbt.legCmdPos<<endl;
 
         gettimeofday(&endTime,NULL);
@@ -113,25 +113,25 @@ void *runImpCtller(void *data)
         /* get motors data  */
         while( motors.getTorque()==false || motors.getPosition()==false || motors.getVelocity()==false );
         /* update the data IMP need */
-        rbt.UpdatejointPresPos();         
-        rbt.UpdatejointPresVel();
-        rbt.ForwardKinematics(1);
-        rbt.UpdateJacobians();
-        rbt.UpdateFtsPresVel();
+        // rbt.UpdatejointPresPos();         
+        // rbt.UpdatejointPresVel();
+        // rbt.ForwardKinematics(1);
+        // rbt.UpdateJacobians();
+        // rbt.UpdateFtsPresVel();
 
-        rbt.UpdateFtsPresForce();  
+        // rbt.UpdateFtsPresForce();  
 
         // rbt.inverseKinematics(rbt.target_pos); //    within rbtCtller
         rbt.mfTargetPos<<rbt.mfInitFootPos;
         rbt.Control();   
-        rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
-        
+       // rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
+        rbt.InverseKinematics(rbt.mfLegCmdPos);
         // cout<<"target_pos: \n"<<rbt.target_pos<<endl;
-        cout<<"legPresPos: \n"<<rbt.mfLegPresPos<<"; \nxc: \n"<<rbt.xc<<endl;
-        cout<<"force:"<<endl<<rbt.mfForce.transpose()<<endl;
-        // cout<<"xc_dotdot: \n"<<rbt.xc_dotdot<<"; \nxc_dot: \n"<<rbt.xc_dot<<"; \nxc: \n"<<rbt.xc<<endl;
-        // cout<<"legPresPos: \n"<<rbt.legPresPos<<endl;
-        cout<<endl;
+        // cout<<"legPresPos: \n"<<rbt.mfLegPresPos<<"; \nxc: \n"<<rbt.xc<<endl;
+        // cout<<"force:"<<endl<<rbt.mfForce.transpose()<<endl;
+        // // cout<<"xc_dotdot: \n"<<rbt.xc_dotdot<<"; \nxc_dot: \n"<<rbt.xc_dot<<"; \nxc: \n"<<rbt.xc<<endl;
+        // // cout<<"legPresPos: \n"<<rbt.legPresPos<<endl;
+        // cout<<endl;
 
         /*      Admittance control      */
         rbt.setPos(rbt.mfJointCmdPos);

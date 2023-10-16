@@ -1,9 +1,5 @@
 #include "gebot.h"
 
-#define LF_PIN	1
-#define RF_PIN	24
-#define LH_PIN	28
-#define RH_PIN	29
 
 #define ForceLPF  0.9
 #define StepHeight  30.0
@@ -28,6 +24,10 @@ CGebot::CGebot(float length,float width,float height,float mass)
     dxlMotors.setOperatingMode(3);  //3 position control; 0 current control
     dxlMotors.torqueEnable();
     dxlMotors.getPosition();
+    api.setPump(1, LOW);//LF
+    api.setPump(24, LOW);//RF
+    api.setPump(28, LOW);//LH
+    api.setPump(29, LOW);//RH
     usleep(1e6);
 }
 
@@ -53,6 +53,10 @@ CGebot::CGebot(float length,float width,float height,float mass,float Ixx,float 
     dxlMotors.setOperatingMode(3);  //3 position control; 0 current control
     dxlMotors.torqueEnable();
     dxlMotors.getPosition();
+    api.setPump(1, LOW);//LF
+    api.setPump(24, LOW);//RF
+    api.setPump(28, LOW);//LH
+    api.setPump(29, LOW);//RH
     usleep(1e6);
 }
 
@@ -262,7 +266,7 @@ void CGebot::NextStep()
         //cout<<"legNum_"<<(int)legNum<<":"<<stepFlag[legNum]<<"  ";
     }
 
-    air_control();
+    AirControl();
     for(uint8_t legNum=0; legNum<4; legNum++)
     {
         if(GetLeg(legNum).GetLegStatus() != stance) mfTimePresentForSwing(legNum) += fTimePeriod;
@@ -331,29 +335,29 @@ void CGebot::SetPos(Matrix<float,4,3> jointCmdPos)
 //robot's air control & imu update
 void CGebot::PumpAllNegtive(uint8_t legNum)
 {
-    svStatus=0b00000000;
+    svStatus=0b01010101;// 01-N 10-P;
     api.setSV(svStatus);
 }
 void CGebot::PumpAllPositve(uint8_t legNum)
 {
-    svStatus=0b11111111;
+    svStatus=0b10101010;
     api.setSV(svStatus);
 }
 void CGebot::PumpPositive(uint8_t legNum)
 {
-    svStatus=svStatus|(0b00000011<<((3-legNum)<<1));
+    svStatus=svStatus&(0b11111111<<((4-legNum)<<1))+svStatus&(0b11111111>>((legNum+1)<<1))+0b00000010<<((3-legNum)<<1);
     api.setSV(svStatus);
 }
 void CGebot::PumpNegtive(uint8_t legNum)
 {   
-    svStatus=svStatus&!(0b00000011<<((3-legNum)<<1))
+    svStatus=svStatus&(0b11111111<<((4-legNum)<<1))+svStatus&(0b11111111>>((legNum+1)<<1))+0b00000001<<((3-legNum)<<1);
     api.setSV(svStatus);
 }
 /**
  * @brief control SV to ensure that robot has a suitable positive and negative pressure state to adhere to the wall
  * 
  */
-void CGebot::air_control()
+void CGebot::AirControl()
 {
     for(int legNum=0;legNum<4;legNum++)
     {
@@ -365,7 +369,7 @@ void CGebot::air_control()
         {
             PumpPositive(legNum);
         }
-
+        cout<<"svStatus:"<<std::setw(2)<<svStatus<<endl;
     }
 
 }
