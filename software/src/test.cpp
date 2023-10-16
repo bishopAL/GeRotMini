@@ -10,6 +10,19 @@
 #define RF_PIN      24
 #define LH_PIN      28
 #define RH_PIN      29
+  uint8_t svStatus=0b01010101;
+void PumpPositive(uint8_t legNum)
+{
+    svStatus=svStatus&(0b11111111<<((4-legNum)<<1))+svStatus&(0b11111111>>((legNum+1)<<1))+0b00000010<<((3-legNum)<<1);
+    api.setSV(svStatus);
+    
+}
+void PumpNegtive(uint8_t legNum)
+{   
+    svStatus=svStatus&(0b11111111<<((4-legNum)<<1))+svStatus&(0b11111111>>((legNum+1)<<1))+0b00000001<<((3-legNum)<<1);
+    api.setSV(svStatus);
+     cout<<"svStatus="<<svStatus;
+}
 
 int main()
 {
@@ -28,7 +41,12 @@ int main()
     gecko.torqueEnable();
     gecko.setPosition(start_pos);
     usleep(1e6);
-
+    api.setPump(1, LOW);
+    api.setPump(24, LOW);
+    api.setPump(28, LOW);
+    api.setPump(29, LOW);
+  
+    api.setSV(svStatus);
     while(1)
     {
         // set SV, pump, update IMU
@@ -42,13 +60,16 @@ int main()
         // api.updatePowerStatus();
         // usleep(1e6);
 
-        api.setSV(0b10101010);
-        api.setPump(1, LOW);
-        api.setPump(24, LOW);
-        api.setPump(28, LOW);
-        api.setPump(29, LOW);
-        api.updateIMU();
-        api.updatePowerStatus();
+
+  
+        //api.updateIMU();
+        //api.updatePowerStatus();
+        for(int i=0;i<4;i++)
+        {
+            PumpPositive(i);
+            usleep(2e6);
+            PumpNegtive(i);
+        }
         usleep(1e6);
 
     }

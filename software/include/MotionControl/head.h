@@ -17,6 +17,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <wiringPi.h> 
+#include<fstream>
+#include<sstream>
+#include <
 #ifdef  VMCCONTROL
   #include <qpOASES.hpp>
 #endif

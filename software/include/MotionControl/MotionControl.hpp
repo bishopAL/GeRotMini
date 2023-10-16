@@ -1,6 +1,6 @@
 #ifndef robotMotionControl_H
 #define robotMotionControl_H
-#include "leg.hpp"
+#include "leg.h"
 using namespace Eigen;
 using namespace std;
 class MotionControl{

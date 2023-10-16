@@ -8,10 +8,11 @@
 
 CGebot::CGebot(float length,float width,float height,float mass)
 {
-    m_glleg[0]=new CLeg("LF",45,45,45);
-    m_glleg[1]=new CLeg("RF",45,45,45);
-    m_glleg[2]=new CLeg("LH",45,45,45);
-    m_glleg[3]=new CLeg("RH",45,45,45);
+    dxlMotors = new DxlAPI("/dev/ttyUSB0", 1000000, ID, 1);
+    m_glleg[0] = new CLeg("LF",45,45,45);
+    m_glleg[1] = new CLeg("RF",45,45,45);
+    m_glleg[2] = new CLeg("LH",45,45,45);
+    m_glleg[3] = new CLeg("RH",45,45,45);
     m_fLength=length;
     m_fWidth=width;
     m_fHeight=height;

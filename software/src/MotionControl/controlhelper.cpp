@@ -1,3 +1,4 @@
+#include "controlhelper.h"
 void string2float(string add, float* dest)
 {
     char data_char[8000],*char_float;
