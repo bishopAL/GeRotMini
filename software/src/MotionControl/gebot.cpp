@@ -1,40 +1,64 @@
 #include "gebot.h"
 
-Gebot::Gebot(float length,float width,float height,float mass)
+#define LF_PIN	1
+#define RF_PIN	24
+#define LH_PIN	28
+#define RH_PIN	29
+
+#define ForceLPF  0.9
+#define StepHeight  30.0
+#define TimeHeight (2.0/4.0)  // time for trajectory within vertical part
+#define swingVelFactor 3      
+
+CGebot::CGebot(float length,float width,float height,float mass)
 {
-    leg[0]=new leg("LF",45,45,45);
-    leg[1]=new leg("RF",45,45,45);
-    leg[2]=new leg("LH",45,45,45);
-    leg[3]=new leg("RH",45,45,45);
-    _length=length;
-    _width=width;
-    _height=height;
-    _mass=mass;
-    shoulderPos<<width/2, length/2, 0,width/2, -length/2,0, -width/2, length/2,0,-width/2, -length/2,0;  // X-Y: LF, RF, LH, RH
+    m_glleg[0]=new CLeg("LF",45,45,45);
+    m_glleg[1]=new CLeg("RF",45,45,45);
+    m_glleg[2]=new CLeg("LH",45,45,45);
+    m_glleg[3]=new CLeg("RH",45,45,45);
+    m_fLength=length;
+    m_fWidth=width;
+    m_fHeight=height;
+    m_fMass=mass;
+    fShoulderPos<<width/2, length/2, 0,width/2, -length/2,0, -width/2, length/2,0,-width/2, -length/2,0;  // X-Y: LF, RF, LH, RH
     
-    timePresent=0.0;
-    timePresentForSwing.setZero();
-    targetCoMVelocity.setZero();
+    mfTimePresent=0.0;
+    mfTimePresentForSwing.setZero();
+    mfTargetCoMVelocity.setZero();
+    dxlMotors.setOperatingMode(3);  //3 position control; 0 current control
+    dxlMotors.torqueEnable();
+    dxlMotors.getPosition();
+    usleep(1e6);
 }
 
-Gebot::Gebot(float length,float width,float height,float mass,float Ixx,float Iyy,float Izz)
+CGebot::CGebot(float length,float width,float height,float mass,float Ixx,float Iyy,float Izz)
 {
-    leg[0]=new leg("LF",45,45,45);
-    leg[1]=new leg("RF",45,45,45);
-    leg[2]=new leg("LH",45,45,45);
-    leg[3]=new leg("RH",45,45,45);
-    _length=length;
-    _width=width;
-    _height=height;
-    _mass=mass;
-    _Ixx=Ixx;
-    _Iyy=Iyy;
-    _Izz=Izz;
+    m_glleg[0]=new Cleg("LF",45,45,45);
+    m_glleg[1]=new Cleg("RF",45,45,45);
+    m_glleg[2]=new Cleg("LH",45,45,45);
+    m_glleg[3]=new Cleg("RH",45,45,45);
+    m_fLength=length;
+    m_fWidth=width;
+    m_fHeight=height;
+    m_fMass=mass;
+    m_fIxx=Ixx;
+    m_fIyy=Iyy;
+    m_fIzz=Izz;
     shoulderPos<<width/2, length/2, 0,width/2, -length/2,0, -width/2, length/2,0,-width/2, -length/2,0;  // X-Y: LF, RF, LH, RH
     
-    timePresent=0.0;
-    timePresentForSwing.setZero();
-    targetCoMVelocity.setZero();
+    mfTimePresent=0.0;
+    mfTimePresentForSwing.setZero();
+    mfTargetCoMVelocity.setZero();
+
+    dxlMotors.setOperatingMode(3);  //3 position control; 0 current control
+    dxlMotors.torqueEnable();
+    dxlMotors.getPosition();
+    usleep(1e6);
+}
+
+CLeg CGebot::GetLeg(int legNum)
+{
+    return m_glLeg[legNum];
 }
 
 /**
@@ -44,16 +68,16 @@ Gebot::Gebot(float length,float width,float height,float mass,float Ixx,float Iy
  * @param tFGP The time of the whole period
  * @param tFSP The time of stance phase on start and end, in order LF, RF, LH, RH
  */
-void Gebot::setPhase(float tP, float tFGP, Matrix<float, 4, 2> tFSP)
+void CGebot::setPhase(float tP, float tFGP, Matrix<float, 4, 2> tFSP)
 {
-    timePeriod = tP;
-    timeForGaitPeriod = tFGP;
-    timeForStancePhase = tFSP;
-    timePresent = 0.0;
-    timePresentForSwing << 0.0, 0.0, 0.0, 0.0;
+    mfTimePeriod = tP;
+    mfTimeForGaitPeriod = tFGP;
+    mfTimeForStancePhase = tFSP;
+    mfTimePresent = 0.0;
+    mfTimePresentForSwing << 0.0, 0.0, 0.0, 0.0;
     for(uint8_t legNum=0; legNum<4; legNum++)  // run all 4 legs
     {   
-            timeForSwing(legNum) = _timeForSwingPhase[legNum][1]-_timeForSwingPhase[legNum][0];
+            mfTimeForSwing(legNum) = vvfTimeForSwingPhase[legNum][1]-vvfTimeForSwingPhase[legNum][0];
     }
 }
 
@@ -66,14 +90,14 @@ void Gebot::setPhase(float tP, float tFGP, Matrix<float, 4, 2> tFSP)
  * @note The lenth of legs, whitch is L1, L2, L3 in constructor of MotionControl.
  */
 
-void MotionControl::setInitPos(Matrix<float, 4, 3> initPosition)
+void CGebot::setInitPos(Matrix<float, 4, 3> initPosition)
 {
-    stancePhaseStartPos = initPosition;
-    stancePhaseEndPos = initPosition;
-    legPresPos = initPosition;
-    legCmdPos = initPosition;
-    initFootPos = initPosition;
-    targetCoMPosition.setZero();
+    mfStancePhaseStartPos = initPosition;
+    mfStancePhaseEndPos = initPosition;
+    mfLegPresPos = initPosition;
+    mfLegCmdPos = initPosition;
+    mfInitFootPos = initPosition;
+    mfTargetCoMPosition.setZero();
 }
 
 /**
@@ -82,9 +106,9 @@ void MotionControl::setInitPos(Matrix<float, 4, 3> initPosition)
  * @param tCV 
  * set  Vel of X,Y,alpha in world cordinate
  */
-void MotionControl::setCoMVel(Vector<float, 6> tCV)
+void CGebot::SetCoMVel(Vector<float, 6> tCV)
 {
-    targetCoMVelocity = tCV;
+    mfTargetCoMVelocity = tCV;
 }
 
 
@@ -94,13 +118,19 @@ void MotionControl::setCoMVel(Vector<float, 6> tCV)
  * @param jointPos 
  * put (vector)jointPos[12] into (Matrix)jointPresPos(4,3)
  */
-void MotionControl::updatejointPresPos()
+void CGebot::UpdatejointPresPos()
 {
     for(int i=0; i<4; i++)
     {
         for(int j=0; j<3; j++)
-            jointPresPos(i,j) = motors.present_positon[i*3 + j];
+            mfJointPresPos(i,j) = dxlMotors.present_positon[i*3 + j];
     }
+    for(int legNum=0;legNum<4;legNum++)
+    {   
+        vector<float> temp(3)=dxlMotors.present_positon(legNum*3,legNum*3+3);
+        GetLeg[legNum].SetJointPos(temp);
+    }
+  
 }
 
 /**
@@ -109,118 +139,124 @@ void MotionControl::updatejointPresPos()
  * @param jointVel 
  * put (vector)jointVel[12] into (Matrix)jointPresVel(4,3)
  */
-void MotionControl::updatejointPresVel()
+void CGebot::UpdatejointPresVel()
 {
     for(int i=0; i<4; i++)
     {
         for(int j=0; j<3; j++)
-            jointPresVel(i,j) = motors.present_velocity[i*3+j];
+            mfJointPresVel(i,j) = dxlMotors.present_velocity[i*3+j];
     }
+}
+
+void CGebot::UpdateJacobians()
+{
+    for(int legNum=0;legNum<4;legNum++)
+        GetLeg[legNum].UpdateJacobian();
 }
 
 /**
  * @brief 
  * update Vel of feet in shoulder coordinate
  */
-void MotionControl::updateFtsPresVel()
+void CGebot::UpdateFtsPresVel()
 {
-    legLastVel=legPresVel;
+    mfLegLastVel=mfLegPresVel;
     Matrix <float, 3, 1> temp_vel;
     for(int i=0; i<4; i++)
     {
-        temp_vel = leg[i]._jacobian * jointPresVel.row(i).transpose();
-        legPresVel.row(i) = temp_vel.transpose();
+        temp_vel = GetLeg[i].GetJacobian() * mfJointPresVel.row(i).transpose();
+        mfLegPresVel.row(i) = temp_vel.transpose();
     }
     
 }
 
 
-void MotionControl::nextStep()
+void CGebot::NextStep()
 {
 
-    if (abs(timePresent - timeForGaitPeriod ) < 1e-4)  // check if present time has reach the gait period                                                               
+    if (abs(mfTimePresent - mfTimeForGaitPeriod ) < 1e-4)  // check if present time has reach the gait period                                                               
     {                                                            // if so, set it to 0.0
-        timePresent = 0.0;
-        // legCmdPos = initFootPos;
+        mfTimePresent = 0.0;
+        // mfLegCmdPos = initFootPos;
     }
 
     for(uint8_t legNum=0; legNum<4; legNum++)  // run all 4 legs
     {   
-        if(timeForSwingPhase(legNum,0) < timeForSwingPhase(legNum,1))
+        if(vvfTimeForSwingPhase[legNum][0] < vvfTimeForSwingPhase[legNum][1])
         {
-            if(timePresent > timeForSwingPhase(legNum,0) - timePeriod/2 && timePresent < timeForSwingPhase(legNum,1) - timePeriod/2 )
-                // check timePresent is in stance phase or swing phase, -timePeriod/2 is make sure the equation is suitable
-                leg[legNum].changStatus(swing);
+            if(mfTimePresent > vvfTimeForSwingPhase[legNum][0] - fTimePeriod/2 && mfTimePresent < vvfTimeForSwingPhase[legNum][1] - fTimePeriod/2 )
+                // check mfTimePresent is in stance phase or swing phase, -fTimePeriod/2 is make sure the equation is suitable
+                GetLeg(legNum).ChangeStatus(swing);
             else    //stance phase 
-                leg[legNum].changStatus(stance);           
+                GetLeg(legNum).ChangeStatus(stance);           
         }
-        if(leg[legNum].getLegStatus() == stance ) //stance phase
+        if(GetLeg(legNum).GetLegStatus() == stance ) //stance phase
         {     
             for(uint8_t pos=0; pos<3; pos++)
             {
-                targetCoMPosition(legNum, pos) += targetCoMVelocity(pos) * timePeriod;
-                targetCoMPosture(legNum,pos) +=targetCoMVelocity(pos+3)*timePeriod;
+                mfTargetCoMPosition(legNum, pos) += mfTargetCoMVelocity(pos) * fTimePeriod;
+                mfTargetCoMPosture(legNum,pos) +=mfTargetCoMVelocity(pos+3)*fTimePeriod;
             }
-            if(abs(timePresent - timeForSwingPhase(legNum,1)) < 1e-4)  // if on the start pos 
+            if(abs(mfTimePresent - vvfTimeForSwingPhase([legNum][1]) < 1e-4)  // if on the start pos 
             {
-                stancePhaseStartPos(legNum) = legCmdPos(legNum);
+                mfStancePhaseStartPos(legNum) = mfLegCmdPos(legNum);
                 for(uint8_t pos=0; pos<3; pos++)
-                    targetCoMPosition(legNum, pos) = 0.0;
+                    mfTargetCoMPosition(legNum, pos) = 0.0;
             }
             Matrix<float, 3, 3> trans;
-            trans<<cos(targetCoMPosture(legNum,2)), -sin(targetCoMPosture(legNum,2)), targetCoMPosition(legNum,0),
-                sin(targetCoMPosture(legNum,2)), cos(targetCoMPosture(legNum,2)), targetCoMPosition(legNum,1),
+            trans<<cos(mfTargetCoMPosture(legNum,2)), -sin(mfTargetCoMPosture(legNum,2)), mfTargetCoMPosition(legNum,0),
+                sin(mfTargetCoMPosture(legNum,2)), cos(mfTargetCoMPosture(legNum,2)), mfTargetCoMPosition(legNum,1),
                 0, 0, 1;
             Matrix<float, 3, 1> oneShoulderPos_3x1;
             oneShoulderPos_3x1<<shoulderPos(legNum,0), shoulderPos(legNum,1), 1;
             oneShoulderPos_3x1 = trans * oneShoulderPos_3x1;
 
-            if(abs(timePresent - timeForSwingPhase(legNum,1)) < 1e-4)  // if on the start pos 
+            if(abs(mfTimePresent - vvfTimeForSwingPhase[legNum][1]) < 1e-4)  // if on the start pos 
             {
-                stancePhaseStartPos(legNum) = legCmdPos(legNum);
+                mfStancePhaseStartPos(legNum) = mfLegCmdPos(legNum);
                 // shoulderPos(legNum, 0) = oneShoulderPos_3x1(0);
                 // shoulderPos(legNum, 1) = oneShoulderPos_3x1(1);
             }
-            if(abs(timePresent - timeForSwingPhase(legNum,0)) < timePeriod + 1e-4)  // if on the end pos   
-                stancePhaseEndPos(legNum) = legCmdPos(legNum);
+            if(abs(mfTimePresent - vvfTimeForSwingPhase[legNum][0]) < fTimePeriod + 1e-4)  // if on the end pos   
+                mfStancePhaseEndPos(legNum) = mfLegCmdPos(legNum);
 
-            legCmdPos(legNum, 0) = stancePhaseStartPos(legNum, 0) + (shoulderPos(legNum, 0) - oneShoulderPos_3x1(0));
-            legCmdPos(legNum, 1) = stancePhaseStartPos(legNum, 1) + (shoulderPos(legNum, 1) - oneShoulderPos_3x1(1));
+            mfLegCmdPos(legNum, 0) = mfStancePhaseStartPos(legNum, 0) + (shoulderPos(legNum, 0) - oneShoulderPos_3x1(0));
+            mfLegCmdPos(legNum, 1) = mfStancePhaseStartPos(legNum, 1) + (shoulderPos(legNum, 1) - oneShoulderPos_3x1(1));
         }
         else    //swing phase 
         {
-            Matrix<float, 1, 3> swingPhaseVelocity = -(stancePhaseEndPos.row(legNum) - stancePhaseStartPos.row(legNum)) / timeForSwing(legNum) ;
+            Matrix<float, 1, 3> swingPhaseVelocity = -(mfStancePhaseEndPos.row(legNum) - mfStancePhaseStartPos.row(legNum)) / fTimeForSwing(legNum) ;
             float x, xh, m, n, k;
             //cout<<"legNum_"<<(int)legNum<<":"<<swingPhaseVelocity.array()<<"  ";
-            if( ( timePresentForSwing(legNum) - timeForSwing(legNum) * TimeHeight ) < 1e-4 && timePresentForSwing(legNum) > -1e-4 && swingPhaseVelocity( 0, 0) != 0)
+            if( ( mfTimePresentForSwing(legNum) - fTimeForSwing(legNum) * TimeHeight ) < 1e-4 && mfTimePresentForSwing(legNum) > -1e-4 && swingPhaseVelocity( 0, 0) != 0)
             {            
                 for(uint8_t pos=0; pos<2; pos++)
-                    legCmdPos(legNum, pos) += swingPhaseVelocity(pos) * timePeriod * swingVelFactor;     // for vertical down
-                x = legCmdPos(legNum, 0) - stancePhaseEndPos(legNum, 0);
-                xh = -(stancePhaseEndPos(legNum, 0) - stancePhaseStartPos(legNum, 0)) * TimeHeight * swingVelFactor;
+                    mfLegCmdPos(legNum, pos) += swingPhaseVelocity(pos) * fTimePeriod * swingVelFactor;     // for vertical down
+                x = mfLegCmdPos(legNum, 0) - mfStancePhaseEndPos(legNum, 0);
+                xh = -(mfStancePhaseEndPos(legNum, 0) - mfStancePhaseStartPos(legNum, 0)) * TimeHeight * swingVelFactor;
 
                 /* z = -( x - m )^2 + n + z0    */
                 // m = (StepHeight + xh * xh) /2 /xh;
                 // n = m * m;
-                // legCmdPos(legNum, 2) = -(x - m) * (x - m) + n + stancePhaseEndPos(legNum, 2);
+                // mfLegCmdPos(legNum, 2) = -(x - m) * (x - m) + n + mfStancePhaseEndPos(legNum, 2);
 
                 /* z = -k * ( x - xh )^2 + H + z0 */
                 k = StepHeight / xh / xh;
-                legCmdPos(legNum, 2) = -k * (x - xh) * (x - xh) + StepHeight + stancePhaseEndPos(legNum, 2);
+                mfLegCmdPos(legNum, 2) = -k * (x - xh) * (x - xh) + StepHeight + mfStancePhaseEndPos(legNum, 2);
             }
-            else if( timePresentForSwing(legNum) - timeForSwing(legNum) < 1e-4 && swingPhaseVelocity( 0, 0) != 0)
+            else if( mfTimePresentForSwing(legNum) - fTimeForSwing(legNum) < 1e-4 && swingPhaseVelocity( 0, 0) != 0)
             {
                 for(uint8_t pos=0; pos<2; pos++)
-                    legCmdPos(legNum, pos) += swingPhaseVelocity(pos) * timePeriod * (1 - swingVelFactor * TimeHeight) / (1 - TimeHeight); // targetCoMVelocity
-                legCmdPos(legNum, 2) -= StepHeight / timeForSwing(legNum) / (1 - TimeHeight) * timePeriod;
+                    mfLegCmdPos(legNum, pos) += swingPhaseVelocity(pos) * fTimePeriod * (1 - swingVelFactor * TimeHeight) / (1 - TimeHeight); // mfTargetCoMVelocity
+                mfLegCmdPos(legNum, 2) -= StepHeight / fTimeForSwing(legNum) / (1 - TimeHeight) * fTimePeriod;
             }  
 
             if(swingPhaseVelocity( 0, 0) == 0)      //first step
             {
-                if( ( timePresentForSwing(legNum) - timeForSwing(legNum)/2 ) < 1e-4 && timePresentForSwing(legNum) > -1e-4)
-                    legCmdPos(legNum, 2) += StepHeight / timeForSwing(legNum) * 2 * timePeriod;
-                if( ( timePresentForSwing(legNum) - timeForSwing(legNum)/2 ) > -1e-4)
-                    legCmdPos(legNum, 2) -=  StepHeight / timeForSwing(legNum) * 2 * timePeriod;
+                if( ( mfTimePresentForSwing(legNum) - fTimeForSwing(legNum)/2 ) < 1e-4 && mfTimePresentForSwing(legNum) > -1e-4)
+                    mfLegCmdPos(legNum, 2) += StepHeight / fTimeForSwing(legNum) * 2 * fTimePeriod;
+                if( ( mfTimePresentForSwing(legNum) - fTimeForSwing(legNum)/2 ) > -1e-4)
+                    mfLegCmdPos(legNum, 2) -=  StepHeight / fTimeForSwing(legNum) * 2 * fTimePeriod;
             }
         }
         //cout<<"legNum_"<<(int)legNum<<":"<<stepFlag[legNum]<<"  ";
@@ -229,58 +265,59 @@ void MotionControl::nextStep()
     air_control();
     for(uint8_t legNum=0; legNum<4; legNum++)
     {
-        if(stepFlag[legNum] != stance) timePresentForSwing(legNum) += timePeriod;
-        else timePresentForSwing(legNum) = 0;   //stance phase
+        if(GetLeg(legNum).GetLegStatus() != stance) mfTimePresentForSwing(legNum) += fTimePeriod;
+        else mfTimePresentForSwing(legNum) = 0;   //stance phase
     }
-    timePresent += timePeriod;
+    mfTimePresent += fTimePeriod;
 }
 
 
-void Gebot::forwardKinematics(int mode)
+void CGebot::ForwardKinematics(int mode)
 {
     if(mode=0)
     for(int legNum=0;legNum<4;legNum++)
-        legCmdPos.row(i)=leg[i].forwardKinematics().transpose();
+        mfLegCmdPos.row(i)=GetLeg[legNum].ForwardKinematics().transpose();
     else{
-        legLastPos=legPrePos;
-        legPrePos.row(i)=leg[i].forwardKinematics().transpose();  
+        mfLegLastPos=mfLegPrePos;
+        for(int legNum=0;legNum<4;legNum++)
+        mfLegPrePos.row(legNum)=GetLeg[legNum].ForwardKinematics().transpose();  
     }
 }
 
-void Gebot::inverseKinematics()
+void CGebot::InverseKinematics()
 {
     for(int legNum=0;legNum<4;legNum++)
-        jointCmdPos.row(i)=leg[i].inverseKinematics().transpose();
+        mfJointCmdPos.row(i)=GetLeg[legNum].InverseKinematics().transpose();
 }
 
 //motor control;
-void Gebot::setPos(Matrix<float,4,3> jointCmdPos)
+void CGebot::SetPos(Matrix<float,4,3> jointCmdPos)
 {
-    vector<float> setPos(12);
+    vector<float> SetPos(12);
     for(int i=0; i<4; i++)  
             for(int j=0;j<3;j++)
             {
-                if( isnanf(imp.jointCmdPos(i,j)) )            
+                if( isnanf(jointCmdPos(i,j)) )            
                 {
-                    imp.jointCmdPos(i,j) = SetPos[i*3+j];   // last
+                    jointCmdPos(i,j) = SetPos[i*3+j];   // last
                     cout<<"-------------motor_angle_"<<i*3+j<<" NAN-----------"<<endl;
                     // cout<<"target_pos: \n"<<imp.target_pos<<"; \nxc: \n"<<imp.xc<<endl;
                     exit(0);
                 }
                 else
                 {
-                    if(imp.jointCmdPos(i,j) - SetPos[i*3+j] > MORTOR_ANGLE_AMP)
+                    if(jointCmdPos(i,j) - SetPos[i*3+j] > MORTOR_ANGLE_AMP)
                     {
                         SetPos[i*3+j] += MORTOR_ANGLE_AMP;
                         cout<<"-------------motor_angle_"<<i*3+j<<" +MAX-----------"<<endl;
                     }
-                    else if(imp.jointCmdPos(i,j) - SetPos[i*3+j] < -MORTOR_ANGLE_AMP)
+                    else if(jointCmdPos(i,j) - SetPos[i*3+j] < -MORTOR_ANGLE_AMP)
                     {
                         SetPos[i*3+j] -= MORTOR_ANGLE_AMP;
                         cout<<"-------------motor_angle_"<<i*3+j<<" -MAX-----------"<<endl;
                     }
                     else 
-                        SetPos[i*3+j] = imp.jointCmdPos(i,j);   // now
+                        SetPos[i*3+j] = jointCmdPos(i,j);   // now
                 }
                 //cout<<"motor_angle_"<<i*3+j<<": "<<SetPos[i*3+j]<<"  ";
             }   
@@ -292,22 +329,22 @@ void Gebot::setPos(Matrix<float,4,3> jointCmdPos)
 
 
 //robot's air control & imu update
-void MotionControl::pumpAllNegtive(uint8_t legNum)
+void CGebot::PumpAllNegtive(uint8_t legNum)
 {
     svStatus=0b00000000;
     api.setSV(svStatus);
 }
-void MotionControl::pumpAllPositve(uint8_t legNum)
+void CGebot::PumpAllPositve(uint8_t legNum)
 {
     svStatus=0b11111111;
     api.setSV(svStatus);
 }
-void MotionControl::pumpPositive(uint8_t legNum)
+void CGebot::PumpPositive(uint8_t legNum)
 {
     svStatus=svStatus|(0b00000011<<((3-legNum)<<1));
     api.setSV(svStatus);
 }
-void MotionControl::pumpNegtive(uint8_t legNum)
+void CGebot::PumpNegtive(uint8_t legNum)
 {   
     svStatus=svStatus&!(0b00000011<<((3-legNum)<<1))
     api.setSV(svStatus);
@@ -316,19 +353,20 @@ void MotionControl::pumpNegtive(uint8_t legNum)
  * @brief control SV to ensure that robot has a suitable positive and negative pressure state to adhere to the wall
  * 
  */
-void MotionControl::air_control()
+void CGebot::air_control()
 {
     for(int legNum=0;legNum<4;legNum++)
     {
-        if(leg[legNum].getLegStatus()==attach)
+        if(GetLeg[legNum].GetLegStatus()==attach)
         {
-            pumpNegative(legNum);
+            PumpNegative(legNum);
         }
-        if(leg[legNum].getLegStatus()==detach)
+        if(GetLeg[legNum].GetLegStatus()==detach)
         {
-            pumpPositive(legNum);
+            PumpPositive(legNum);
         }
 
     }
 
 }
+
