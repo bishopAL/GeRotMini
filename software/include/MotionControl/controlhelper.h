@@ -1,6 +1,9 @@
 #ifndef CONTROLHELPER_H
 #define CONTROLHELPER_H
 #include "head.h"
-#include <string>
-void string2float(string add, float* dest);
+enum enum_LEGSTATUS{swing=0,attach,stance,detach}; 
+enum enum_LEGNAME{LF,RF,LH,RH};
+enum enum_CONTROLMODE{ADMITTANCE,IMPEDANCE};
+void string2float(std::string add, float* dest);
+void printSvStatus(unsigned char svStatus);
 #endif

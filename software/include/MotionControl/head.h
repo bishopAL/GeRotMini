@@ -11,17 +11,18 @@
 #include <unistd.h>
 #include <map>
 #include <string>
-#include "i2c.h"
-#include "dynamixel.h"
-#include "api.h"
+#include <string.h>
+//#include "i2c.h"
+//#include "dynamixel.h"
+//#include "api.h"
 #include <stdio.h>
 #include <unistd.h>
-#include <wiringPi.h> 
+//#include <wiringPi.h> 
 #include<fstream>
 #include<sstream>
-#include <
 #ifdef  VMCCONTROL
   #include <qpOASES.hpp>
 #endif
-
+using namespace Eigen;
+using namespace std;
 #endif

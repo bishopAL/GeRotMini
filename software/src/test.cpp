@@ -13,15 +13,16 @@
   uint8_t svStatus=0b01010101;
 void PumpPositive(uint8_t legNum)
 {
-    svStatus=svStatus&(0b11111111<<((4-legNum)<<1))+svStatus&(0b11111111>>((legNum+1)<<1))+0b00000010<<((3-legNum)<<1);
+    svStatus|=1<<((3-legNum)<<1+1);
+    svStatus&=0<<((3-legNum)<<1);
     api.setSV(svStatus);
     
 }
 void PumpNegtive(uint8_t legNum)
 {   
-    svStatus=svStatus&(0b11111111<<((4-legNum)<<1))+svStatus&(0b11111111>>((legNum+1)<<1))+0b00000001<<((3-legNum)<<1);
+    svStatus|=1<<((3-legNum)<<1);
+    svStatus&=0<<((3-legNum)<<1+1);
     api.setSV(svStatus);
-     cout<<"svStatus="<<svStatus;
 }
 
 int main()

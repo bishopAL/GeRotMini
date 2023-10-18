@@ -1,13 +1,12 @@
 #include "robotcontrol.h"
 using namespace Eigen;
-CRobotControl::CRobotControl(enum_CONTROLMODE mode,float length,float width,float height,float mass):CGebot(length,width,height,mass)
-{
+void CRobotControl::Init(){
     float impdata[200];
     string2float("../include/adm_parameter.csv",impdata);   // 0-swing,1-attach,2-stance,3-detach
     for(int i=0; i<4; i++)
     {
-        Map<Matrix<float, 4, 3, RowMajor>> mapK(impdata + 36 * i), mapB(impdata + 12 + 36 * i), mapM(impdata  + 24 + 36 * i);
-        ChangePara(mapK,mapB,mapM, i);
+    Map<Matrix<float, 4, 3, RowMajor>> mapK(impdata + 36 * i), mapB(impdata + 12 + 36 * i), mapM(impdata  + 24 + 36 * i);
+    ChangePara(mapK,mapB,mapM, i);
     } 
     mfXcDotDot.setZero();
     mfXcDot.setZero();
@@ -19,34 +18,32 @@ CRobotControl::CRobotControl(enum_CONTROLMODE mode,float length,float width,floa
     mfLastForce.setZero();
     fCtlRate = 100;
     // cal inertial
-    m_fIxx=((_length*_length)+(_height*_height))*mass/12;
-    m_eControlMode=mode;
+    m_fIxx=((m_fLength*m_fLength)+(m_fHeight*m_fHeight))*m_fMass/12;
 }
-
 void CRobotControl::UpdateImuData()
 {
-    api.updateIMU();
-    vfVmcOmegaBase<<api.fAcc;
-    vfGravity<<api.fGyro;
+    // api.updateIMU();
+    // vfVmcOmegaBase<<api.fAcc;
+    // vfGravity<<api.fGyro;
 }
 
-void CRobotControl::UpdateFtsPresForce()
-{
-    Matrix<float, 3, 4> temp;
-    if(mfForce(2,3) - mfLastForce(2,3) > 0.3 || mfForce(2,3) - mfLastForce(2,3) < -0.3)
-        temp.setZero();
-    for(int i=0; i<3; i++)
-        for(int j=0;j<4;j++)
-            temp(i ,j ) = dxlMotors.present_torque[i+j*3];
-    for (int i=0; i<4; i++)
-        mfForce.col(i) = ForceLPF * mfLastForce.col(i) + (1-ForceLPF) * leg[i]._jacobian.transpose().inverse() * temp.col(i);
-    mfLastForce = mfForce;
-}
+// void CRobotControl::UpdateFtsPresForce()
+// {
+//     Matrix<float, 3, 4> temp;
+//     if(mfForce(2,3) - mfLastForce(2,3) > 0.3 || mfForce(2,3) - mfLastForce(2,3) < -0.3)
+//         temp.setZero();
+//     for(int i=0; i<3; i++)
+//         for(int j=0;j<4;j++)
+//             temp(i ,j ) = dxlMotors.present_torque[i+j*3];
+//     for (int i=0; i<4; i++)
+//         mfForce.col(i) = ForceLPF * mfLastForce.col(i) + (1-ForceLPF) * leg[i]._jacobian.transpose().inverse() * temp.col(i);
+//     mfLastForce = mfForce;
+// }
 
 void CRobotControl::UpdateTargTor(Matrix<float, 3, 4> force)
 {
     for (int legNum=0; legNum<4; legNum++)
-        mfTargetTor.col(legNum) = GetLeg[legNum].GetJacobian() * force.col(i); 
+        mfTargetTor.col(legNum) = m_glLeg[legNum]->GetJacobian() * force.col(legNum); 
 }
 
 void CRobotControl::ParaDeliver()
@@ -84,7 +81,7 @@ void CRobotControl::ParaDeliver()
     #endif
 }
 
-void CRobotControl::ChangePara(Matrix<float, 4, 3> mK, Matrix<float, 4, 3> mB, Matrix<float, 4, 3> mM)
+void CRobotControl::ChangePara(Matrix<float, 4, 3> mK, Matrix<float, 4, 3> mB, Matrix<float, 4, 3> mM,int mode)
 {
         switch(mode) 
     {
@@ -115,7 +112,7 @@ void CRobotControl::Control()
             + mfKstance.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))
             + mfBstance.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum)) ;
             // + mfMstance.row(legNum).cwiseProduct(mfTargetAcc.row(legNum) - mfXcDotDot.row(legNum));
-            cout<<"legNum_"<<(int)legNum<<":"<<stepFlag[legNum]<<endl;
+            cout<<"legNum_"<<(int)legNum<<":"<<m_glLeg[legNum]->GetLegStatus()<<endl;
             cout<<"K__stance_"<<(int)legNum<<"  "<<mfKstance.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))<<endl;
             cout<<"B__stance_"<<(int)legNum<<"  "<<mfBstance.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum))<<endl;
             // cout<<"mfForce"<<mfForce.transpose().row(legNum)<<endl;
@@ -130,9 +127,9 @@ void CRobotControl::Control()
     {
         for(uint8_t legNum=0; legNum<4; legNum++)
         {   
-            switch(GetLeg[legNum].GetLegStatus())
+            switch(m_glLeg[legNum]->GetLegStatus())
             {
-                case Leg::__legStatus::stance: //stance
+                case stance: //stance
                     mfXcDotDot.row(legNum) =  mfTargetAcc.row(legNum) 
                     + mfKstance.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))
                     + mfBstance.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum)) 
@@ -142,7 +139,7 @@ void CRobotControl::Control()
                     // cout<<"M__stance_"<<(int)legNum<<"  "<<mfMstance.row(legNum).cwiseInverse().cwiseProduct( mfTargetForce.row(legNum) - mfForce.transpose().row(legNum) )<<endl;
                     break;
 
-                case Leg::__legStatus::swing: //swing
+                case swing: //swing
                     mfXcDotDot.row(legNum) =  mfTargetAcc.row(legNum) 
                     + mfKswing.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))
                     + mfBwing.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum)) 
@@ -150,7 +147,7 @@ void CRobotControl::Control()
 
                     break;
 
-                case Leg::__legStatus::detach: //detach
+                case detach: //detach
                     mfXcDotDot.row(legNum) =  mfTargetAcc.row(legNum) 
                     + mfKdetach.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))
                     + mfBdetach.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum))   
@@ -160,7 +157,7 @@ void CRobotControl::Control()
                     cout<<"M__detach_"<<(int)legNum<<"  "<<mfMdetach.row(legNum).cwiseInverse().cwiseProduct( mfTargetForce.row(legNum) - mfForce.transpose().row(legNum) )<<endl;
                     break;
 
-                case Leg::__legStatus::attach: //attach
+                case attach: //attach
                     mfXcDotDot.row(legNum) =  mfTargetAcc.row(legNum) 
                     + mfKattach.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))
                     + mfBattach.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum)) 
@@ -195,14 +192,14 @@ void CRobotControl::CalVmcCom()
     stanceAccumlate.setZero();
     for(int legNum=0;legNum<4;legNum++)
     {
-        if(GetLeg[legNum].GetLegStatus()==stance)
+        if(m_glLeg[legNum]->GetLegStatus()==stance)
         { 
         stanceLegNum.push_back(legNum);
-        Matrix<float,3,1> temp_vel = jacobian_vector[legNum] * jointPresVel.row(legNum).transpose();
+        Matrix<float,3,1> temp_vel = m_glLeg[legNum]->GetJacobian() * mfJointPresPos.row(legNum).transpose();
         mfLegPresVel.row(legNum) = temp_vel.transpose();
             for(int i=0;i<3;i++)
             {
-                if((mfLegPresVel.row(legNum)[i]-legLastVel.row(legNum)[i])/legLastVel.row(legNum)[i]>0.3||(mfLegPresVel.row(legNum)[i]-legLastVel.row(legNum)[i])/legLastVel.row(legNum)[i]<-0.3)
+                if((mfLegPresVel.row(legNum)[i]-mfLegLastVel.row(legNum)[i])/mfLegLastVel.row(legNum)[i]>0.3||(mfLegPresVel.row(legNum)[i]-mfLegLastVel.row(legNum)[i])/mfLegLastVel.row(legNum)[i]<-0.3)
                 isOk=0;
             
                 if(i==2)
@@ -222,18 +219,18 @@ void CRobotControl::CalVmcCom()
     mfVmcKdcom<<200,0,0,0,200,0,0,0,0;
     mfVmcKdbase<<200,0,0,0,200,0,0,0,200;
     Matrix<float,3,1> targetComVelxyz;
-    targetComVelxyz=targetCoMVelocity.block(0,0,3,1);
-    presentCoMVelocity=-stanceAccumlate/stanceUsefulCount;
-    acc_DCOM=mfVmcKdcom*(targetComVelxyz-presentCoMVelocity);
+    targetComVelxyz=vfTargetCoMVelocity.block(0,0,3,1);
+    vfPresentCoMVelocity.block(0,0,3,1)=-stanceAccumlate/stanceUsefulCount;
+    vfVmcAccDCom=mfVmcKdcom*(targetComVelxyz-vfPresentCoMVelocity.block(0,0,3,1));
    
     vector<int>::size_type tempSize=stanceLegNum.size();
-    int stanceCount=(int)tempSize;
-    omegaBase=targetCoMVelocity.block(3,0,3,1);
-    updateImuData();
-    vfVmcAngelAccDBase=mfVmcKdbase(omegaDBase-omegaBase);//cal angelAcc
+    stanceCount=(int)tempSize;
+    vfVmcOmegaBase=vfTargetCoMVelocity.block(3,0,3,1);
+    UpdateImuData();
+    vfVmcAngelAccDBase=mfVmcKdbase*(vfVmcOmegaDBase-vfVmcOmegaBase);//cal angelAcc
 
 
-    vfVmcb61<<mass*(acc_DCOM+vfGravity),Ixx*vfVmcAngelAccDBase[0],Iyy*vfVmcAngelAccDBase[1],Izz*vfVmcAngelAccDBase[2];
+    vfVmcb61<<m_fMass*(vfVmcAccDCom+vfGravity),m_fIxx*vfVmcAngelAccDBase[0],m_fIyy*vfVmcAngelAccDBase[1],m_fIzz*vfVmcAngelAccDBase[2];
     int k=3*stanceCount;
     mfTempASM.setZero();
     mfVmcS66.setIdentity(6,6);
@@ -241,21 +238,21 @@ void CRobotControl::CalVmcCom()
     mfVmcW.setIdentity(k,k);
     for(int i=0; i<4; i++)
     {
-        ftsPosASM.push_back(mfTempASM);
+        mfFtsPosASM.push_back(mfTempASM);
     }
     for(int i=0; i<4; i++)
     {
-    mfTempASM << 0, -legCmdPos(i, 2), legCmdPos(i, 1), legCmdPos(i, 2), 0, -legCmdPos(i, 0), -legCmdPos(i, 1), legCmdPos(i, 0), 0;
-    ftsPosASM[i] = mfTempASM;
+    mfTempASM << 0, -mfLegCmdPos(i, 2), mfLegCmdPos(i, 1), mfLegCmdPos(i, 2), 0, -mfLegCmdPos(i, 0), -mfLegCmdPos(i, 1), mfLegCmdPos(i, 0), 0;
+    mfFtsPosASM[i] = mfTempASM;
     }
     mfVmcA.resize(6,k);
     for(int i=0;i<stanceCount;i++)
     {
         mfVmcA.block<3,3>(0,i*3)<<MatrixXf::Identity(3, 3);
-        mfVmcA.block<3,3>(3,i*3)<<ftsPosASM[stanceLegNum[i]];
+        mfVmcA.block<3,3>(3,i*3)<<mfFtsPosASM[stanceLegNum[i]];
     }
     mfVmcH.resize(k,k);
-    mfVmcH=2*mfVmcA.transpose()*vfVmcS66*mfVmcA+2*mfVmcW;
+    mfVmcH=2*mfVmcA.transpose()*mfVmcS66*mfVmcA+2*mfVmcW;
     vfVmcg61=-2*mfVmcA.transpose()*mfVmcS66*vfVmcb61;
 
     //qp

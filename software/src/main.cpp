@@ -58,7 +58,7 @@ void *robotStateUpdateSend(void *data)
 
 #if(INIMODE==2)
     float  float_initPos[12];
-    string2float("../include/initPos.csv", float_initPos);//Foot end position
+   // string2float("../include/initPos.csv", float_initPos);//Foot end position
     for(int i=0; i<4; i++)
         for(int j=0;j<3;j++)
         {

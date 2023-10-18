@@ -4,7 +4,10 @@
 
 class CRobotControl : public CGebot{
 public:
-    CRobotControl(enum_CONTROLMODE mode,float length,float width,float height,float mass):CGebot(length,width,height,mass)
+    CRobotControl(float length,float width,float height,float mass,enum_CONTROLMODE mode):CGebot(length,width,height,mass){
+            m_eControlMode=mode;
+            Init();
+    }
     Matrix<float, 4, 3> mfTargetPos; // LF RF LH RH ; x y z  in CoM cordinate 
     Matrix<float, 4, 3> mfTargetVel;
     Matrix<float, 4, 3> mfTargetAcc; // Force in target position
@@ -15,10 +18,11 @@ public:
     Matrix<float, 3, 4> mfForce, mfLastForce;              // force feedback   x y z ; LF RF LH RH
     Matrix<float, 3, 4> mfTargetTor;
     Matrix<float, 4, 3> mfKswing, mfKstance, mfKdetach, mfKattach;                     //LF RF LH RH
-    Matrix<float, 4, 3> mfBwing, mfBstance, mfBdetach, B_attach;
+    Matrix<float, 4, 3> mfBwing, mfBstance, mfBdetach, mfBattach;
     Matrix<float, 4, 3> mfMswing, mfMstance, mfMdetach, mfMattach;
     float fCtlRate;
-    enum enum_CONTROLMODE{ADMITTANCE,IMPEDANCE} m_eControlMode;  
+    enum_CONTROLMODE m_eControlMode;  
+    void Init();
     void UpdateFtsPresForce(vector<float> torque);
     void UpdateTargTor(Matrix<float, 3, 4> force);
     void ParaDeliver();
@@ -38,7 +42,7 @@ public:
     Matrix<float,3,3> mfVmcKpcom;
     Matrix<float,3,3> mfVmcKdcom;
     Matrix<float,3,3> mfVmcKpbase;
-    Matrix<float,3,3> Kdbase;
+    Matrix<float,3,3> mfVmcKdbase;
     Matrix<float,3,1> vfVmcAccDCom;
     Matrix<float,3,1> vfVmcAngelAccDBase;
     Matrix<float,3,1> vfVmcOmegaDBase;
@@ -47,5 +51,5 @@ public:
     void UpdateImuData();
 
 
-}
+};
 #endif
