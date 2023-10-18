@@ -234,7 +234,7 @@ void CGebot::NextStep()
         //cout<<"legNum_"<<(int)legNum<<":"<<stepFlag[legNum]<<"  ";
     }
 
-    //AirControl();
+    AirControl();
     for(uint8_t legNum=0; legNum<4; legNum++)
     {
         if(m_glLeg[legNum]->GetLegStatus() != stance) mfTimePresentForSwing(legNum,0) += fTimePeriod;
