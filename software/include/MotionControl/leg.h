@@ -20,7 +20,6 @@ public:
     Matrix<float,3,1> InverseKinematic(Matrix<float, 1, 3> cmdpos);   // standing state
     void ChangeStatus(enum_LEGSTATUS legStatus);
     enum_LEGSTATUS GetLegStatus();
-    ~CLeg();
 };
 
 #endif

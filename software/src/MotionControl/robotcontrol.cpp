@@ -49,7 +49,7 @@ void CRobotControl::UpdateTargTor(Matrix<float, 3, 4> force)
 void CRobotControl::ParaDeliver()
 {
     #ifdef  VMCCONTROL
-    CalVmcCom();
+    //CalVmcCom();
     #else
     mfTargetPos = legCmdPos;
     for(uint8_t legNum=0; legNum<4; legNum++)

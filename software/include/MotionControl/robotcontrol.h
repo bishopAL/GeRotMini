@@ -8,6 +8,10 @@ public:
             m_eControlMode=mode;
             Init();
     }
+//     CRobotControl(enum_CONTROLMODE mode):CGebot(){
+//         m_eControlMode=mode;
+//         Init();
+// }
     Matrix<float, 4, 3> mfTargetPos; // LF RF LH RH ; x y z  in CoM cordinate 
     Matrix<float, 4, 3> mfTargetVel;
     Matrix<float, 4, 3> mfTargetAcc; // Force in target position

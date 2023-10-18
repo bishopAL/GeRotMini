@@ -1,28 +1,15 @@
 #include"robotcontrol.h"
 
-using namespace std;
-#define THREAD1_ENABLE 1
-#define THREAD2_ENABLE 1
-//  1:  Motor angle
-//  2:  Foot end position
-#define INIMODE 2
-#define _JOYSTICK 1
-#define MORTOR_ANGLE_AMP 40*3.14/180.0
-#define loopRateCommandUpdate 100.0   //hz
-#define loopRateStateUpdateSend 20.0   //hz
-#define loopRateImpCtller 100.0   //hz
-#define VELX 6.0    // mm  step length = VELX * timeForStancePhase        
-#define TimePeriod 0.05
-#define TimeForGaitPeriod 6
 
-RobotControl rbt(ADMITTANCE,120,60,20,500);
+CRobotControl rbt(120.0,60.0,20.0,500.0,ADMITTANCE);
+
 void *robotStateUpdateSend(void *data)
 {
-    Matrix<float, 4, 2>TimeForSwingPhase;
+    Matrix<float,4,2> TimeForSwingPhase;
     Matrix<float, 4, 3> InitPos;
-    Vector<float, 3> TCV={ VELX, 0, 0 };// X, Y , alpha 
+    Matrix<float, 6,1> TCV={ VELX, 0, 0,0,0,0 };// X, Y , alpha 
     
-
+    
     //motors initial
 
 #if(INIMODE==1)
@@ -44,7 +31,7 @@ void *robotStateUpdateSend(void *data)
 
     motors.setPosition(init_Motor_angle);
 #endif    
-    
+ 
     //      rbt initial
     // TimeForStancePhase<< 0,                       TimeForGaitPeriod/2.0,     // diagonal
     //                      TimeForGaitPeriod/2.0,   TimeForGaitPeriod, 
@@ -54,11 +41,11 @@ void *robotStateUpdateSend(void *data)
                          0,             TimeForGaitPeriod/4.0,
                          TimeForGaitPeriod/4.0 *3,    TimeForGaitPeriod-TimePeriod,
                          TimeForGaitPeriod/4.0  ,          TimeForGaitPeriod/4.0 *2;
-    rbt.SetPhase(TimePeriod, TimeForGaitPeriod, TimeForSwingPhase);
+   rbt.SetPhase(TimePeriod, TimeForGaitPeriod, TimeForSwingPhase);
 
 #if(INIMODE==2)
-    float  float_initPos[12];
-   // string2float("../include/initPos.csv", float_initPos);//Foot end position
+   float  float_initPos[12]={45,45,-45,45,-45,-45,-45,45,-45,-45,-45,-45};
+   string2float("../include/initPos.csv", float_initPos);//Foot end position
     for(int i=0; i<4; i++)
         for(int j=0;j<3;j++)
         {
@@ -67,12 +54,14 @@ void *robotStateUpdateSend(void *data)
         }
     rbt.SetInitPos(InitPos);
 #endif
-
+  
+   
     rbt.SetCoMVel(TCV);
     rbt.InverseKinematics(rbt.mfLegCmdPos);
 #if(INIMODE==2)  
     rbt.SetPos(rbt.mfJointCmdPos);
 #endif
+
     rbt.mfTargetPos = rbt.mfLegCmdPos;
     rbt.bInitFlag = 1;
     usleep(1e5);
@@ -81,11 +70,10 @@ void *robotStateUpdateSend(void *data)
         struct timeval startTime,endTime;
         double timeUse;
         gettimeofday(&startTime,NULL);
-
         //If stay static, annotate below one line.
         rbt.NextStep();//
-        //rbt.ParaDeliver();
-        // cout<<"legCmdPos:\n"<<rbt.legCmdPos<<endl;
+        rbt.ParaDeliver();
+         cout<<"LegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;
 
         gettimeofday(&endTime,NULL);
         timeUse = 1e6*(endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
@@ -95,11 +83,13 @@ void *robotStateUpdateSend(void *data)
             cout<<"TimeRobotStateUpdateSend: "<<timeUse<<endl;
 
     }
-    
+ 
 }
 
 void *runImpCtller(void *data)
 {
+    
+    
     struct timeval startTime,endTime;
     double timeUse;
     int run_times=0;    // for debugging
@@ -111,7 +101,7 @@ void *runImpCtller(void *data)
     {
         gettimeofday(&startTime,NULL);
         /* get motors data  */
-        while( motors.getTorque()==false || motors.getPosition()==false || motors.getVelocity()==false );
+        //while( motors.getTorque()==false || motors.getPosition()==false || motors.getVelocity()==false );
         /* update the data IMP need */
         // rbt.UpdatejointPresPos();         
         // rbt.UpdatejointPresVel();
@@ -122,7 +112,7 @@ void *runImpCtller(void *data)
         // rbt.UpdateFtsPresForce();  
 
         // rbt.inverseKinematics(rbt.target_pos); //    within rbtCtller
-        rbt.mfTargetPos<<rbt.mfInitFootPos;
+        //rbt.mfTargetPos<<rbt.mfInitFootPos;
         rbt.Control();   
        // rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
         rbt.InverseKinematics(rbt.mfLegCmdPos);
@@ -150,12 +140,13 @@ void *runImpCtller(void *data)
             cout<<"timeImpCtller: "<<timeUse<<endl;
         
     }
+  
 }
 
 int main(int argc, char ** argv)
-{
+{   
+    
     // Lcm.subscribe("ROBOTCOMMAND", &RobotStateHandler::handleMessage, &rsHandle);
-
     pthread_t th1, th2, th3;
 	int ret;
 
