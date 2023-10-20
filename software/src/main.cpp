@@ -23,11 +23,13 @@ void *udpConnect(void *data)
 		CHECK_RET(srv_sock.Recv(&buf, &peer_ip, &peer_port));
 		cout << "UpperComputer["<<peer_ip<<":"<<peer_port<<"] Command: " << buf << endl;
         //buf match command 
-        int ret=match((char*)string("start").c_str(),(char *)buf.c_str());
+        int ret=commandJudge((char*)string("start").c_str(),(char *)buf.c_str());
         if(ret) {runFlag=1; goto END;}
-        ret=match((char*)string("stop").c_str(),(char *)buf.c_str());
+        ret=commandJudge((char*)string("stop").c_str(),(char *)buf.c_str());
         if(ret) {runFlag=0; goto END;}
-        
+        // int ret=match((char*)string("start").c_str(),(char*)string("startsada").c_str());
+        // cout<<(char*)string("start").c_str()<<endl;
+        // cout<<ret<<endl;
 		//发送数据
         END:
 		buf.clear();

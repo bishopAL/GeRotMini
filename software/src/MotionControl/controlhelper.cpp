@@ -73,10 +73,10 @@ int match(char *P, char *T)
      int m=(int) strlen(P),j=0;
      while(j<m&&i<n)
      if(0>j||T[i]==P[j]){
-        i++,j++;
+        i++;j++;
      }else
         j=next[j];
-    delete next;
+    delete[] next;
     return i-j;
 }
 
@@ -91,4 +91,12 @@ int *buildNext(char *P)
         }else
             t=N[t];
     return N;
+}
+
+bool commandJudge(char *P, char *T)
+{
+    int ret=match(P,T);
+    if(ret>=strlen(T)) return false;
+    else if(ret<0){cout<<"match error"<<endl; return false;}
+    else return true; 
 }

@@ -14,4 +14,6 @@ Matrix<float,4,3> inverseMotorMapping(vector<float> motorPos);
 /*************command match help**************/
 int match(char *P,char *T);
 int *buildNext(char *P);
+bool commandJudge(char *P,char* T);
+
 #endif
