@@ -1,8 +1,44 @@
 #include"robotcontrol.h"
 
-
+#define CHECK_RET(q) if((q)==false){return 0;}
 CRobotControl rbt(120.0,60.0,20.0,500.0,ADMITTANCE);
+bool runFlag=0;
+void *udpConnect(void *data)
+{
 
+	string ip = "127.0.0.1";
+	uint16_t port = 8888;
+
+	CUdpSocket srv_sock;
+	//创建套接字
+	CHECK_RET(srv_sock.Socket());
+	//绑定地址信息
+	CHECK_RET(srv_sock.Bind(ip, port));
+	while(1)
+	{
+		//接收数据
+		string buf;
+		string peer_ip;
+		uint16_t peer_port;
+		CHECK_RET(srv_sock.Recv(&buf, &peer_ip, &peer_port));
+		cout << "UpperComputer["<<peer_ip<<":"<<peer_port<<"] Command: " << buf << endl;
+        //buf match command 
+        int ret=match((char*)string("start").c_str(),(char *)buf.c_str());
+        if(ret) {runFlag=1; goto END;}
+        ret=match((char*)string("stop").c_str(),(char *)buf.c_str());
+        if(ret) {runFlag=0; goto END;}
+        
+		//发送数据
+        END:
+		buf.clear();
+		// cout << "server say: ";
+		// cin >> buf;
+		// CHECK_RET(srv_sock.Send(buf, peer_ip, peer_port));
+	}
+	//关闭套接字
+	srv_sock.Close();
+	return 0;
+}
 void *robotStateUpdateSend(void *data)
 {
     Matrix<float,4,2> TimeForSwingPhase;
@@ -59,7 +95,7 @@ void *robotStateUpdateSend(void *data)
     rbt.SetCoMVel(TCV);
     rbt.InverseKinematics(rbt.mfLegCmdPos);
 #if(INIMODE==2)  
-    rbt.SetPos(rbt.mfJointCmdPos);
+    //rbt.SetPos(rbt.mfJointCmdPos);
 #endif
 
     rbt.mfTargetPos = rbt.mfLegCmdPos;
@@ -67,21 +103,24 @@ void *robotStateUpdateSend(void *data)
     usleep(1e5);
     while(1)
     {
-        struct timeval startTime,endTime;
-        double timeUse;
-        gettimeofday(&startTime,NULL);
-        //If stay static, annotate below one line.
-        rbt.NextStep();//
-        rbt.ParaDeliver();
-         cout<<"LegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;
+        if(runFlag)
+        {
+            cout<<runFlag<<endl;
+            struct timeval startTime,endTime;
+            double timeUse;
+            gettimeofday(&startTime,NULL);
+            //If stay static, annotate below one line.
+            rbt.NextStep();//
+            rbt.ParaDeliver();
+            // cout<<"LegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;
 
-        gettimeofday(&endTime,NULL);
-        timeUse = 1e6*(endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
-        if(timeUse < 1e4)
-            usleep(1.0/loopRateStateUpdateSend*1e6 - (double)(timeUse) - 10); 
-        else
-            cout<<"TimeRobotStateUpdateSend: "<<timeUse<<endl;
-
+            gettimeofday(&endTime,NULL);
+            timeUse = 1e6*(endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
+            if(timeUse < 1e4)
+                usleep(1.0/loopRateStateUpdateSend*1e6 - (double)(timeUse) - 10); 
+            //else
+            // cout<<"TimeRobotStateUpdateSend: "<<timeUse<<endl;
+        }
     }
  
 }
@@ -99,46 +138,48 @@ void *runImpCtller(void *data)
     usleep(1e5);
     while (1)
     {
-        gettimeofday(&startTime,NULL);
-        /* get motors data  */
-        //while( motors.getTorque()==false || motors.getPosition()==false || motors.getVelocity()==false );
-        /* update the data IMP need */
-        // rbt.UpdatejointPresPos();         
-        // rbt.UpdatejointPresVel();
-        // rbt.ForwardKinematics(1);
-        // rbt.UpdateJacobians();
-        // rbt.UpdateFtsPresVel();
+        if(runFlag)
+        {
+            gettimeofday(&startTime,NULL);
+            /* get motors data  */
+            //while( motors.getTorque()==false || motors.getPosition()==false || motors.getVelocity()==false );
+            /* update the data IMP need */
+            // rbt.UpdatejointPresPos();         
+            // rbt.UpdatejointPresVel();
+            // rbt.ForwardKinematics(1);
+            // rbt.UpdateJacobians();
+            // rbt.UpdateFtsPresVel();
 
-        // rbt.UpdateFtsPresForce();  
+            // rbt.UpdateFtsPresForce();  
 
-        // rbt.inverseKinematics(rbt.target_pos); //    within rbtCtller
-        //rbt.mfTargetPos<<rbt.mfInitFootPos;
-        rbt.Control();   
-       // rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
-        rbt.InverseKinematics(rbt.mfLegCmdPos);
-        // cout<<"target_pos: \n"<<rbt.target_pos<<endl;
-        // cout<<"legPresPos: \n"<<rbt.mfLegPresPos<<"; \nxc: \n"<<rbt.xc<<endl;
-        // cout<<"force:"<<endl<<rbt.mfForce.transpose()<<endl;
-        // // cout<<"xc_dotdot: \n"<<rbt.xc_dotdot<<"; \nxc_dot: \n"<<rbt.xc_dot<<"; \nxc: \n"<<rbt.xc<<endl;
-        // // cout<<"legPresPos: \n"<<rbt.legPresPos<<endl;
-        // cout<<endl;
+            // rbt.inverseKinematics(rbt.target_pos); //    within rbtCtller
+            //rbt.mfTargetPos<<rbt.mfInitFootPos;
+            rbt.Control();   
+            // rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
+            rbt.InverseKinematics(rbt.mfLegCmdPos);
+            // cout<<"target_pos: \n"<<rbt.target_pos<<endl;
+            // cout<<"legPresPos: \n"<<rbt.mfLegPresPos<<"; \nxc: \n"<<rbt.xc<<endl;
+            // cout<<"force:"<<endl<<rbt.mfForce.transpose()<<endl;
+            // // cout<<"xc_dotdot: \n"<<rbt.xc_dotdot<<"; \nxc_dot: \n"<<rbt.xc_dot<<"; \nxc: \n"<<rbt.xc<<endl;
+            // // cout<<"legPresPos: \n"<<rbt.legPresPos<<endl;
+            // cout<<endl;
 
-        /*      Admittance control      */
-        rbt.setPos(rbt.mfJointCmdPos);
+            /*      Admittance control      */
+            //rbt.setPos(rbt.mfJointCmdPos);
 
-        /*      Impedance control      */
-        // for(int i=0; i<4; i++)  
-        //     for(int j=0;j<3;j++)
-        //         SetTorque[i*3+j] = rbt.target_torque(j,i);
-        // motors.setTorque(SetTorque); 
+            /*      Impedance control      */
+            // for(int i=0; i<4; i++)  
+            //     for(int j=0;j<3;j++)
+            //         SetTorque[i*3+j] = rbt.target_torque(j,i);
+            // motors.setTorque(SetTorque); 
 
-        gettimeofday(&endTime,NULL);
-        timeUse = 1e6*(endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
-        if(timeUse < 1e4)
-            usleep(1.0/loopRateImpCtller*1e6 - (double)(timeUse) - 10); 
-        else
-            cout<<"timeImpCtller: "<<timeUse<<endl;
-        
+            gettimeofday(&endTime,NULL);
+            timeUse = 1e6*(endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
+            if(timeUse < 1e4)
+                usleep(1.0/loopRateImpCtller*1e6 - (double)(timeUse) - 10); 
+            else
+                cout<<"timeImpCtller: "<<timeUse<<endl;
+        }
     }
   
 }
@@ -146,10 +187,15 @@ void *runImpCtller(void *data)
 int main(int argc, char ** argv)
 {   
     
-    // Lcm.subscribe("ROBOTCOMMAND", &RobotStateHandler::handleMessage, &rsHandle);
+    
     pthread_t th1, th2, th3;
 	int ret;
-
+    ret = pthread_create(&th1,NULL,udpConnect,NULL);
+    if(ret != 0)
+	{
+		printf("create pthread1 error!\n");
+		exit(1);
+	}
     ret = pthread_create(&th2,NULL,robotStateUpdateSend,NULL);
     if(ret != 0)
 	{

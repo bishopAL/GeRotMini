@@ -14,7 +14,7 @@ public:
     CLeg();
     CLeg(enum_LEGNAME name,float L1,float L2,float L3);
     Matrix<float,3,3> GetJacobian();
-    void SetJointPos(vector<float> jointPos);
+    void SetJointPos(Matrix<float,3,1> jointPos);
     void UpdateJacobian();
     Matrix<float,3,1> ForwardKinematic();
     Matrix<float,3,1> InverseKinematic(Matrix<float, 1, 3> cmdpos);   // standing state

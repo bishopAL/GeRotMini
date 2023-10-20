@@ -28,12 +28,12 @@
 #include <map>
 #include <string>
 #include <string.h>
-#include "i2c.h"
-#include "dynamixel.h"
-#include "api.h"
+//#include "i2c.h"
+//#include "dynamixel.h"
+//#include "api.h"
 #include <stdio.h>
 #include <unistd.h>
-#include <wiringPi.h> 
+//#include <wiringPi.h> 
 #include<fstream>
 #include<sstream>
 #ifdef  VMCCONTROL

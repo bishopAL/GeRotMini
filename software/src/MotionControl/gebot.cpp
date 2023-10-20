@@ -16,7 +16,8 @@ CGebot::CGebot(float length,float width,float height,float mass)
     m_fHeight=height;
     m_fMass=mass;
     mfShoulderPos<<width/2, length/2, 0,width/2, -length/2,0, -width/2, length/2,0,-width/2, -length/2,0;  // X-Y: LF, RF, LH, RH
-    
+    for(int i=0;i<12;++i)
+        vLastSetPos.push_back(0);
     fTimePresent=0.0;
     mfTimePresentForSwing.setZero();
     vfTargetCoMVelocity.setZero();
@@ -92,14 +93,10 @@ void CGebot::SetCoMVel(Matrix<float, 6,1> tCV)
  */
 // void CGebot::UpdatejointPresPos()
 // {
-//     for(int i=0; i<4; i++)
-//     {
-//         for(int j=0; j<3; j++)
-//             mfJointPresPos(i,j) = dxlMotors.present_positon[i*3 + j];
-//     }
+//     mfJointPresPos=inverseMotorMapping(dxlMotors.present_positon);
 //     for(int legNum=0;legNum<4;legNum++)
 //     {   
-//         vector<float> temp(3)=dxlMotors.present_positon(legNum*3,legNum*3+3);
+//         Matrix<float,3,1> temp=mfJointCmdPos.block(legNum,0,1,3).transpose();
 //         m_glLeg[legNum]->SetJointPos(temp);
 //     }
   
@@ -113,11 +110,7 @@ void CGebot::SetCoMVel(Matrix<float, 6,1> tCV)
  */
 // void CGebot::UpdatejointPresVel()
 // {
-//     for(int i=0; i<4; i++)
-//     {
-//         for(int j=0; j<3; j++)
-//             mfJointPresVel(i,j) = dxlMotors.present_velocity[i*3+j];
-//     }
+//     mfJointPresVel=inverseMotorMapping(dxlMotors.present_velocity);       
 // }
 
 void CGebot::UpdateJacobians()
@@ -234,7 +227,7 @@ void CGebot::NextStep()
         //cout<<"legNum_"<<(int)legNum<<":"<<stepFlag[legNum]<<"  ";
     }
 
-    AirControl();
+    //AirControl();
     for(uint8_t legNum=0; legNum<4; legNum++)
     {
         if(m_glLeg[legNum]->GetLegStatus() != stance) mfTimePresentForSwing(legNum,0) += fTimePeriod;
@@ -263,121 +256,122 @@ void CGebot::InverseKinematics(Matrix<float, 4, 3> cmdpos)
 }
 
 //motor control;
-void CGebot::SetPos(Matrix<float,4,3> jointCmdPos)
-{
-    vector<float> SetPos(12);
-    for(int i=0; i<4; i++)  
-            for(int j=0;j<3;j++)
-            {
-                if( isnanf(jointCmdPos(i,j)) )            
-                {
-                    jointCmdPos(i,j) = SetPos[i*3+j];   // last
-                    cout<<"-------------motor_angle_"<<i*3+j<<" NAN-----------"<<endl;
-                    // cout<<"target_pos: \n"<<imp.target_pos<<"; \nxc: \n"<<imp.xc<<endl;
-                    exit(0);
-                }
-                else
-                {
-                    if(jointCmdPos(i,j) - SetPos[i*3+j] > MORTOR_ANGLE_AMP)
-                    {
-                        SetPos[i*3+j] += MORTOR_ANGLE_AMP;
-                        cout<<"-------------motor_angle_"<<i*3+j<<" +MAX-----------"<<endl;
-                    }
-                    else if(jointCmdPos(i,j) - SetPos[i*3+j] < -MORTOR_ANGLE_AMP)
-                    {
-                        SetPos[i*3+j] -= MORTOR_ANGLE_AMP;
-                        cout<<"-------------motor_angle_"<<i*3+j<<" -MAX-----------"<<endl;
-                    }
-                    else 
-                        SetPos[i*3+j] = jointCmdPos(i,j);   // now
-                }
-                //cout<<"motor_angle_"<<i*3+j<<": "<<SetPos[i*3+j]<<"  ";
-            }   
-    motors.setPosition(SetPos); 
+//  void CGebot::SetPos(Matrix<float,4,3> jointCmdPos)
+// {
+//     vector<float> setPos;
+//     setPos=motorMapping(jointCmdPos);
+//     for(int i=0; i<4; i++)  
+//             for(int j=0;j<3;j++)
+//             {
+//                 if( isnanf(setPos[i*3+j]))         
+//                 {
+//                     setPos[i*3+j] = vLastSetPos[i*3+j];   // last
+//                     cout<<"-------------motor_angle_"<<i*3+j<<" NAN-----------"<<endl;
+//                     // cout<<"target_pos: \n"<<imp.target_pos<<"; \nxc: \n"<<imp.xc<<endl;
+//                     exit(0);
+//                 }
+//                 else
+//                 {
+//                     if(setPos[i*3+j] - vLastSetPos[i*3+j] > MORTOR_ANGLE_AMP)
+//                     {
+//                         vLastSetPos[i*3+j] += MORTOR_ANGLE_AMP;
+//                         cout<<"-------------motor_angle_"<<i*3+j<<" +MAX-----------"<<endl;
+//                     }
+//                     else if(setPos[i*3+j] - vLastSetPos[i*3+j] < -MORTOR_ANGLE_AMP)
+//                     {
+//                         vLastSetPos[i*3+j] -= MORTOR_ANGLE_AMP;
+//                         cout<<"-------------motor_angle_"<<i*3+j<<" -MAX-----------"<<endl;
+//                     }
+//                     else 
+//                         vLastSetPos[i*3+j] = setPos[i*3+j];   // now
+//                 }
+//                 //cout<<"motor_angle_"<<i*3+j<<": "<<SetPos[i*3+j]<<"  ";
+//             }   
+//     motors.setPosition(vLastSetPos); 
  
-}
+// }
 
 
 
 
 //robot's air control & imu update
 //RF-RH-LH-LF
-void CGebot::PumpAllNegtive()
-{
-    svStatus=0b01010101;// 01-N 10-P;
-    api.setSV(svStatus);
-}
-void CGebot::PumpAllPositve()
-{
-    svStatus=0b10101010;
-    api.setSV(svStatus);
-}
-void CGebot::PumpPositive(int legNum)
-{
-    switch (legNum)
-    {
-    case 0:
-        svStatus|=1<<1;
-        svStatus&=~(1<<0);
-        break;
-    case 1:
-        svStatus|=1<<7;
-        svStatus&=~(1<<6);
-        break;
-    case 2:
-        svStatus|=1<<3;
-        svStatus&=~(1<<2);
-        break; 
-    case 3:
-        svStatus|=1<<5;
-        svStatus&=~(1<<4);
-        break;    
-    default:
-        break;
-    }
-}
-void CGebot::PumpNegtive(int legNum)
-{   
-       switch (legNum)
-    {
-    case 0:
-        svStatus|=1<<0;
-        svStatus&=~(1<<1);
-        break;
-    case 1:
-        svStatus|=1<<6;
-        svStatus&=~(1<<7);
-        break;
-    case 2:
-        svStatus|=1<<2;
-        svStatus&=~(1<<3);
-        break; 
-    case 3:
-        svStatus|=1<<4;
-        svStatus&=~(1<<5);
-        break;    
-    default:
-        break;
-    }
-}
-/**
- * @brief control SV to ensure that robot has a suitable positive and negative pressure state to adhere to the wall
- * 
- */
-void CGebot::AirControl()
-{
-    for(int legNum=0;legNum<4;legNum++)
-    {
-        if(m_glLeg[legNum]->GetLegStatus()==attach)
-        {
-            PumpNegative(legNum);
-        }
-        if(m_glLeg[legNum]->GetLegStatus()==detach)
-        {
-            PumpPositive(legNum);
-        }
-        cout<<"svStatus:"<<std::setw(2)<<svStatus<<endl;
-    }
+// void CGebot::PumpAllNegtive()
+// {
+//     svStatus=0b01010101;// 01-N 10-P;
+//     api.setSV(svStatus);
+// }
+// void CGebot::PumpAllPositve()
+// {
+//     svStatus=0b10101010;
+//     api.setSV(svStatus);
+// }
+// void CGebot::PumpPositive(int legNum)
+// {
+//     switch (legNum)
+//     {
+//     case 0:
+//         svStatus|=1<<1;
+//         svStatus&=~(1<<0);
+//         break;
+//     case 1:
+//         svStatus|=1<<7;
+//         svStatus&=~(1<<6);
+//         break;
+//     case 2:
+//         svStatus|=1<<3;
+//         svStatus&=~(1<<2);
+//         break; 
+//     case 3:
+//         svStatus|=1<<5;
+//         svStatus&=~(1<<4);
+//         break;    
+//     default:
+//         break;
+//     }
+// }
+// void CGebot::PumpNegtive(int legNum)
+// {   
+//        switch (legNum)
+//     {
+//     case 0:
+//         svStatus|=1<<0;
+//         svStatus&=~(1<<1);
+//         break;
+//     case 1:
+//         svStatus|=1<<6;
+//         svStatus&=~(1<<7);
+//         break;
+//     case 2:
+//         svStatus|=1<<2;
+//         svStatus&=~(1<<3);
+//         break; 
+//     case 3:
+//         svStatus|=1<<4;
+//         svStatus&=~(1<<5);
+//         break;    
+//     default:
+//         break;
+//     }
+// }
+// /**
+//  * @brief control SV to ensure that robot has a suitable positive and negative pressure state to adhere to the wall
+//  * 
+//  */
+// void CGebot::AirControl()
+// {
+//     for(int legNum=0;legNum<4;legNum++)
+//     {
+//         if(m_glLeg[legNum]->GetLegStatus()==attach)
+//         {
+//             PumpNegative(legNum);
+//         }
+//         if(m_glLeg[legNum]->GetLegStatus()==detach)
+//         {
+//             PumpPositive(legNum);
+//         }
+//         cout<<"svStatus:"<<std::setw(2)<<svStatus<<endl;
+//     }
 
-}
+// }
 

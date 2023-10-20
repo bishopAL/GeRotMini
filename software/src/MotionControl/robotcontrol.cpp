@@ -20,25 +20,25 @@ void CRobotControl::Init(){
     // cal inertial
     m_fIxx=((m_fLength*m_fLength)+(m_fHeight*m_fHeight))*m_fMass/12;
 }
-void CRobotControl::UpdateImuData()
-{
-    api.updateIMU();
-    vfVmcOmegaBase<<api.fAcc;
-    vfGravity<<api.fGyro;
-}
+// void CRobotControl::UpdateImuData()
+// {
+//     api.updateIMU();
+//     vfVmcOmegaBase<<api.fAcc;
+//     vfGravity<<api.fGyro;
+// }
 
-void CRobotControl::UpdateFtsPresForce()
-{
-    Matrix<float, 3, 4> temp;
-    if(mfForce(2,3) - mfLastForce(2,3) > 0.3 || mfForce(2,3) - mfLastForce(2,3) < -0.3)
-        temp.setZero();
-    for(int i=0; i<3; i++)
-        for(int j=0;j<4;j++)
-            temp(i ,j ) = dxlMotors.present_torque[i+j*3];
-    for (int i=0; i<4; i++)
-        mfForce.col(i) = ForceLPF * mfLastForce.col(i) + (1-ForceLPF) * leg[i]._jacobian.transpose().inverse() * temp.col(i);
-    mfLastForce = mfForce;
-}
+// void CRobotControl::UpdateFtsPresForce()
+// {
+//     Matrix<float, 3, 4> temp;
+//     if(mfForce(2,3) - mfLastForce(2,3) > 0.3 || mfForce(2,3) - mfLastForce(2,3) < -0.3)
+//         temp.setZero();
+//     for(int i=0; i<3; i++)
+//         for(int j=0;j<4;j++)
+//             temp(i ,j ) = dxlMotors.present_torque[i+j*3];
+//     for (int i=0; i<4; i++)
+//         mfForce.col(i) = ForceLPF * mfLastForce.col(i) + (1-ForceLPF) * leg[i]._jacobian.transpose().inverse() * temp.col(i);
+//     mfLastForce = mfForce;
+// }
 
 void CRobotControl::UpdateTargTor(Matrix<float, 3, 4> force)
 {
@@ -49,7 +49,7 @@ void CRobotControl::UpdateTargTor(Matrix<float, 3, 4> force)
 void CRobotControl::ParaDeliver()
 {
     #ifdef  VMCCONTROL
-    //CalVmcCom();
+   // CalVmcCom();
     #else
     mfTargetPos = legCmdPos;
     for(uint8_t legNum=0; legNum<4; legNum++)
@@ -226,7 +226,7 @@ void CRobotControl::CalVmcCom()
     vector<int>::size_type tempSize=stanceLegNum.size();
     stanceCount=(int)tempSize;
     vfVmcOmegaBase=vfTargetCoMVelocity.block(3,0,3,1);
-    UpdateImuData();
+    //UpdateImuData();
     vfVmcAngelAccDBase=mfVmcKdbase*(vfVmcOmegaDBase-vfVmcOmegaBase);//cal angelAcc
 
 
@@ -252,9 +252,10 @@ void CRobotControl::CalVmcCom()
         mfVmcA.block<3,3>(3,i*3)<<mfFtsPosASM[stanceLegNum[i]];
     }
     mfVmcH.resize(k,k);
+    vfVmcg3c1.resize(k,1);
     mfVmcH=2*mfVmcA.transpose()*mfVmcS66*mfVmcA+2*mfVmcW;
-    vfVmcg61=-2*mfVmcA.transpose()*mfVmcS66*vfVmcb61;
-
+    vfVmcg3c1=-2*mfVmcA.transpose()*mfVmcS66*vfVmcb61;
+    cout<<"k="<<k<<endl;
     //qp
     qpOASES::Options options;
     options.initialStatusBounds = qpOASES::ST_INACTIVE;
@@ -263,12 +264,14 @@ void CRobotControl::CalVmcCom()
     qpOASES::QProblemB qpPrograme(k);
     qpPrograme.setOptions(options);
     qpOASES::real_t qp_H[k*k]={};
-    qpOASES::real_t qp_g[6]={};
-    qpOASES::real_t lb[6]={-200,-200,-200,-200,-200,-200};
-    qpOASES::real_t ub[6]={200,200,200,200,200,200};
+    qpOASES::real_t qp_g[k]={};
+    // qpOASES::real_t lb[6]={-200,-200,-200,-200,-200,-200};
+    // qpOASES::real_t ub[6]={200,200,200,200,200,200};
+    qpOASES::real_t lb[k]={-200};
+    qpOASES::real_t ub[k]={200};
         for(int i=0; i<k; i++)
     {
-        qp_g[i] = vfVmcg61(i,0);
+        qp_g[i] = vfVmcg3c1(i,0);
         for(int j=0; j<k; j++)
         {
         qp_H[i*6+j] = mfVmcH(i,j);

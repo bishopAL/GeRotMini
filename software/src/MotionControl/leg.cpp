@@ -8,7 +8,7 @@ CLeg::CLeg(enum_LEGNAME name,float L1,float L2,float L3)
     m_fL3=L3;
 
 }
- void CLeg::SetJointPos(vector<float> jointPos)
+ void CLeg::SetJointPos(Matrix<float,3,1> jointPos)
  {
     m_fTheta1=jointPos[0];
     m_fTheta2=jointPos[1];
