@@ -59,6 +59,9 @@ public:
     void setPump(u8 num, u8 status);
     void updateIMU();
     void updatePowerStatus();
+    void pumpPositive(uint8_t legNum);
+    void pumpNegtive(uint8_t legNum);
+    uint8_t svStatus;
     
 };
 

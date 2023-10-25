@@ -10,6 +10,8 @@
 #define RF_PIN      24
 #define LH_PIN      28
 #define RH_PIN      29
+uint8_t svStatus=0b01010101;
+
 
 int main()
 {
@@ -28,7 +30,12 @@ int main()
     gecko.torqueEnable();
     gecko.setPosition(start_pos);
     usleep(1e6);
-
+    api.setPump(1, LOW);
+    api.setPump(24, LOW);
+    api.setPump(28, LOW);
+    api.setPump(29, LOW);
+  
+    api.setSV(svStatus);
     while(1)
     {
         // set SV, pump, update IMU
@@ -42,14 +49,15 @@ int main()
         // api.updatePowerStatus();
         usleep(3e6);
 
-        api.setSV(0b10101010);
-        api.setPump(1, LOW);
-        api.setPump(24, LOW);
-        api.setPump(28, LOW);
-        api.setPump(29, LOW);
-        api.updateIMU();
-        api.updatePowerStatus();
-        usleep(3e6);
+        //api.updateIMU();
+        //api.updatePowerStatus();
+        for(int i=0;i<4;i++)
+        {
+            api.pumpPositive(i);
+            usleep(2e6);
+            api.pumpNegtive(i);
+        }
+        usleep(1e6);
 
     }
 

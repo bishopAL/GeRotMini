@@ -4,7 +4,7 @@ PROJECT(robot)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-# include directories
+#include directories
 include_directories(${PROJECT_SOURCE_DIR}/include/dynamixel)
 include_directories(${PROJECT_SOURCE_DIR}/include/INA219)
 include_directories(${PROJECT_SOURCE_DIR}/include/SVnPUMPnIMU)
@@ -16,7 +16,7 @@ include_directories(/usr/include/ )
 link_directories("/usr/local/lib")
 link_directories("/usr/lib")
 
-# identify the processor, mark "DYNAMIXELLIB"
+#identify the processor, mark "DYNAMIXELLIB"
 message("CMAKE_HOST_SYSTEM_NAME: ${CMAKE_HOST_SYSTEM_NAME} ")
 message("CMAKE_HOST_SYSTEM_PROCESSOR: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin")
@@ -47,16 +47,18 @@ file(GLOB MOTIONCONTROL_SRC
      "./src/MotionControl/*.c"
 )
 
-file(GLOB MAIN_
+file(GLOB MAIN
      "./src/main.cpp"
 )
 
 file(GLOB TEST
 	"./src/test.cpp"
 )
+# ADD_EXECUTABLE(main ${MAIN} ${MOTIONCONTROL_SRC} )
+# target_link_libraries(main /usr/local/lib/libqpOASES.a)
 
-# ADD_EXECUTABLE(main ${MAIN} ${SVPUMPIMU_SRC} ${INA219_SRC} ${MOTIONCONTROL_SRC} ${DYNAMIXEL_SRC}) 
+ADD_EXECUTABLE(main ${MAIN} ${SVPUMPIMU_SRC} ${INA219_SRC} ${MOTIONCONTROL_SRC} ${DYNAMIXEL_SRC}) 
 ADD_EXECUTABLE(test ${TEST} ${SVPUMPIMU_SRC} ${INA219_SRC} ${DYNAMIXEL_SRC}) 
 
-# target_link_libraries(main -lwiringPi ${DYNAMIXELLIB})
+target_link_libraries(main -lwiringPi ${DYNAMIXELLIB} /usr/local/lib/libqpOASES.a -lpthread)
 target_link_libraries(test -lwiringPi ${DYNAMIXELLIB})

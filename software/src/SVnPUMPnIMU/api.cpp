@@ -11,6 +11,7 @@ API::API()
     static int fd;
     unsigned char *i2c_dev = (unsigned char *)"/dev/i2c-1";
     fd = i2c_open(i2c_dev, 3, 3);
+    uint8_t svStatus=0b01010101;
     wiringPiSetup();
     pinMode(1, OUTPUT); 
     pinMode(24, OUTPUT); 
@@ -34,7 +35,7 @@ API::~API()
 /**
  * @brief a function to set solid valves' status
  * 
- * @param value a value int number, sequencing at LF0-LF1-LH0-LH1-RH0-RH1-RF0-RF1, like 01100110
+ * @param value a value int number, sequencing at RF-RH-LH-LF, 10-positive,01-negetive,example as 01101010 represent RF negetive & RH LH LF positive;
  */
 void API::setSV(u8 value)
 {
@@ -90,6 +91,21 @@ void API::updatePowerStatus()
     #ifdef DATALOG
     cout<<busVoltage<<", "<<current<<", "<<power<<endl;
     #endif
+}
+
+void API::pumpPositive(uint8_t legNum)
+{
+    svStatus|=1<<((3-legNum)<<1+1);
+    svStatus&=0<<((3-legNum)<<1);
+    setSV(svStatus);
+    
+}
+
+void API::pumpNegtive(uint8_t legNum)
+{   
+    svStatus|=1<<((3-legNum)<<1);
+    svStatus&=0<<((3-legNum)<<1+1);
+    setSV(svStatus);
 }
 
 static int i2c_read(u8 addr, u8 reg, u8 *data, u32 len)
