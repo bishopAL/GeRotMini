@@ -32,7 +32,7 @@ int main()
     while(1)
     {
         // set SV, pump, update IMU
-        // api.setSV(0b01010101);
+        api.setSV(0b01010101);
         // api.setPump(1, HIGH);
         // api.setPump(24, HIGH);
         // api.setPump(28, HIGH);
@@ -40,7 +40,7 @@ int main()
         // api.updateIMU();
         // // update power system
         // api.updatePowerStatus();
-        // usleep(1e6);
+        usleep(3e6);
 
         api.setSV(0b10101010);
         api.setPump(1, LOW);
@@ -49,7 +49,7 @@ int main()
         api.setPump(29, LOW);
         api.updateIMU();
         api.updatePowerStatus();
-        usleep(1e6);
+        usleep(3e6);
 
     }
 
