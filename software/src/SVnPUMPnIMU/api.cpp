@@ -1,7 +1,7 @@
 #include "api.h"
 #include <iostream>
 #include <wiringPi.h> 
-
+#include<bitset>
 using namespace std;
 #define DATALOG 1
 static volatile char s_cDataUpdate = 0;
@@ -11,7 +11,7 @@ API::API()
     static int fd;
     unsigned char *i2c_dev = (unsigned char *)"/dev/i2c-1";
     fd = i2c_open(i2c_dev, 3, 3);
-    uint8_t svStatus=0b01010101;
+    svStatus=0b01010101;
     wiringPiSetup();
     pinMode(1, OUTPUT); 
     pinMode(24, OUTPUT); 
@@ -25,6 +25,7 @@ API::API()
     ina219.init(ADDR_40);
     ina219.reset();
     ina219.setCalibration_0_4A(_16V, B_12Bits_128S_69MS, S_12Bits_128S_69MS, ShuntAndBusVoltageContinuous);
+
 }
 
 API::~API()
@@ -95,16 +96,28 @@ void API::updatePowerStatus()
 
 void API::pumpPositive(uint8_t legNum)
 {
-    svStatus|=1<<((3-legNum)<<1+1);
-    svStatus&=0<<((3-legNum)<<1);
+    if(legNum==0) legNum=3;
+    else if(legNum==1) legNum=0;
+    else if(legNum==2) legNum=2;
+    else if(legNum==3) legNum=1;
+    svStatus|=1<<((3-legNum)*2+1);
+    //cout<<"svStatus1="<<bitset<8>(svStatus)<<"\n";
+    svStatus&=~(1<<((3-legNum)*2));
+    cout<<"svStatus2="<<bitset<8>(svStatus)<<"\n";
     setSV(svStatus);
-    
+
 }
 
 void API::pumpNegtive(uint8_t legNum)
 {   
-    svStatus|=1<<((3-legNum)<<1);
-    svStatus&=0<<((3-legNum)<<1+1);
+    if(legNum==0) legNum=3;
+    else if(legNum==1) legNum=0;
+    else if(legNum==2) legNum=2;
+    else if(legNum==3) legNum=1;
+    svStatus|=1<<((3-legNum)*2);
+   //  cout<<"svStatus1="<<bitset<8>(svStatus)<<"\n";
+    svStatus&=~(1<<((3-legNum)*2+1));
+    cout<<"svStatus2="<<bitset<8>(svStatus)<<"\n";
     setSV(svStatus);
 }
 
@@ -176,14 +189,14 @@ static void AutoScanSensor(void)
 			if(s_cDataUpdate != 0)
 			{
                 #ifdef DATALOG
-				printf("find %02X addr sensor\r\n", i);
+                cout<<"find %02X addr sensor\r\n";
                 #endif
 				return ;
 			}
 			iRetry--;
 		}while(iRetry);		
 	// }
-	printf("can not find sensor\r\n");
-	printf("please check your connection\r\n");
+    cout<<"can not find sensor\r\n";
+	cout<<"please check your connection\r\n";
 }
 
