@@ -1,7 +1,7 @@
 #ifndef head_H
 #define head_H
 
-#define VMCCONTROL
+// #define VMCCONTROL
 #define ForceLPF  0.9
 #define StepHeight  30.0
 #define TimeHeight (2.0/4.0)  // time for trajectory within vertical part

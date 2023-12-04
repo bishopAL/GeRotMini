@@ -52,31 +52,19 @@ void CRobotControl::ParaDeliver()
     #ifdef  VMCCONTROL
    // CalVmcCom();
     #else
-    mfTargetPos = legCmdPos;
+    mfTargetPos = mfLegCmdPos;
     for(uint8_t legNum=0; legNum<4; legNum++)
     {   
-        if(GetLeg[legNum].GetLegStatus() == swing) //swing
+        switch(m_glLeg[legNum]->GetLegStatus())
         {
-            if( ( timePresentForSwing(legNum) - (timeForSwing(legNum) - timePeriod *8) ) > -1e-4 )
-            {
-                GetLeg[legNum].GetLegStatus() = attach;   //attach
-                mfTargetForce.row(legNum) << 0, 0, -1.6;  // x, y, z
-            }
-            else if( ( timePresentForSwing(legNum) - timePeriod *8 ) < 1e-4 && timePresentForSwing(legNum) > 1e-4)
-            {
-                GetLeg[legNum].GetLegStatus() = detach;   //detach
-                mfTargetForce.row(legNum) << 0, 0, 1.5;
-            }
-            else    //swing
-            {
-                GetLeg[legNum].GetLegStatus() = swing;
-                mfTargetForce.row(legNum) << 0, 0, 0;
-            }
-        }
-        else        //stance
-        {
-            GetLeg[legNum].GetLegStatus() = stance;
-            mfTargetForce.row(legNum) << -0.6, 0, -1.6;    
+            case 0: mfTargetForce.row(legNum) << -0.6, 0, -1.6;   //stance
+            break;
+            case 1: mfTargetForce.row(legNum) << 0, 0, 0;        //swing
+            break;
+            case 2: mfTargetForce.row(legNum) << 0, 0, 1.5;      //detach
+            break;
+            case 3: mfTargetForce.row(legNum) << 0, 0, -1.6;     //attach
+            break;
         }
     }
     #endif
