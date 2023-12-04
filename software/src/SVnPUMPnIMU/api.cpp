@@ -94,32 +94,6 @@ void API::updatePowerStatus()
     #endif
 }
 
-void API::pumpPositive(uint8_t legNum)
-{
-    if(legNum==0) legNum=3;
-    else if(legNum==1) legNum=0;
-    else if(legNum==2) legNum=2;
-    else if(legNum==3) legNum=1;
-    svStatus|=1<<((3-legNum)*2+1);
-    //cout<<"svStatus1="<<bitset<8>(svStatus)<<"\n";
-    svStatus&=~(1<<((3-legNum)*2));
-    cout<<"svStatus2="<<bitset<8>(svStatus)<<"\n";
-    setSV(svStatus);
-
-}
-
-void API::pumpNegtive(uint8_t legNum)
-{   
-    if(legNum==0) legNum=3;
-    else if(legNum==1) legNum=0;
-    else if(legNum==2) legNum=2;
-    else if(legNum==3) legNum=1;
-    svStatus|=1<<((3-legNum)*2);
-   //  cout<<"svStatus1="<<bitset<8>(svStatus)<<"\n";
-    svStatus&=~(1<<((3-legNum)*2+1));
-    cout<<"svStatus2="<<bitset<8>(svStatus)<<"\n";
-    setSV(svStatus);
-}
 
 static int i2c_read(u8 addr, u8 reg, u8 *data, u32 len)
 {

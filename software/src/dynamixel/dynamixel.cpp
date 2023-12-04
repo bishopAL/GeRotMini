@@ -12,6 +12,12 @@
 
 using namespace std;
 using namespace dynamixel;
+DxlAPI:: DxlAPI()
+{
+
+}
+
+
 /**
  * @brief Construct a new DxlAPI:: DxlAPI object
  * 
@@ -83,6 +89,63 @@ DxlAPI::~DxlAPI()
 {
     portHandler->closePort();
 }
+ void DxlAPI::init(char *port, int baudrate_set, vector<int> ids, uint8_t type)
+ {
+ BAUDRATE = baudrate_set;
+    PORT_NAME = port;
+    MOTOR_TYPE = type;
+    ID.clear();
+    for(int i=0; i<ids.size(); i++)
+    {
+        ID.push_back(ids[i]);
+    }
+    MOTOR_NUM = ID.size();
+    ADDR_OPERATING_MODE = 11;
+    ADDR_OPERATING_MODE_LENGTH = 1;
+    ADDR_BAUD_RATE = 8;
+    ADDR_BAUD_RATE_LENGTH = 1;
+    ADDR_PRO_TORQUE_ENABLE = 64;
+    ADDR_PRO_TORQUE_ENABLE_LENGTH = 1;
+    ADDR_PRO_GOAL_POSITION = 116;
+    ADDR_PRO_GOAL_POSITION_LENGTH = 4;
+    ADDR_PRO_PRESENT_POSITION = 132;
+    ADDR_PRO_PRESENT_POSITION_LENGTH = 4;
+    ADDR_PRO_GOAL_CURRENT = 102;
+    ADDR_PRO_GOAL_CURRENT_LENGTH = 2;
+    ADDR_PRO_PROFILE_VELOCITY = 112;
+    ADDR_PRO_PROFILE_VELOCITY_LENGTH = 4;
+    ADDR_PRO_PROFILE_ACCELERATION = 108;
+    ADDR_PRO_PROFILE_ACCELERATION_LENGTH = 4;
+    ADDR_PRO_PRESENT_CURRENT = 126;
+    ADDR_PRO_PRESENT_CURRENT_LENGTH = 2;
+    ADDR_PRO_PRESENT_VELOCITY = 128;
+    ADDR_PRO_PRESENT_VELOCITY_LENGTH = 4;
+    ADDR_PRO_GOAL_VELOCITY = 104;
+    ADDR_PRO_GOAL_VELOCITY_LENGTH = 4;
+    portHandler = dynamixel::PortHandler::getPortHandler(PORT_NAME);
+    packetHandler = dynamixel::PacketHandler::getPacketHandler(2.0);
+
+    // Initialize GroupSyncWrite
+    // dynamixel::GroupSyncWrite groupSyncWriteCurrent(portHandler, packetHandler, ADDR_PRO_GOAL_CURRENT, ADDR_PRO_GOAL_CURRENT_LENGTH);
+    // dynamixel::GroupSyncWrite groupSyncWriteVelocity(portHandler, packetHandler, ADDR_PRO_GOAL_VELOCITY, ADDR_PRO_GOAL_VELOCITY_LENGTH);
+    // dynamixel::GroupSyncWrite groupSyncWriteProfileVelocity(portHandler, packetHandler, ADDR_PRO_PROFILE_VELOCITY, ADDR_PRO_PROFILE_VELOCITY_LENGTH);
+    // dynamixel::GroupSyncWrite groupSyncWriteProfileAcceleration(portHandler, packetHandler, ADDR_PRO_PROFILE_ACCELERATION, ADDR_PRO_PROFILE_ACCELERATION_LENGTH);
+    // dynamixel::GroupSyncWrite groupSyncWriteTorqueEnable(portHandler, packetHandler, ADDR_PRO_TORQUE_ENABLE, ADDR_PRO_TORQUE_ENABLE_LENGTH);
+    // // Initialize GroupSyncRead
+    // dynamixel::GroupSyncRead groupSyncReadPosition(portHandler, packetHandler, ADDR_PRO_PRESENT_POSITION, ADDR_PRO_PRESENT_POSITION_LENGTH);
+    // dynamixel::GroupSyncRead groupSyncReadVelocity(portHandler, packetHandler, ADDR_PRO_PRESENT_VELOCITY, ADDR_PRO_PRESENT_VELOCITY_LENGTH);
+    // dynamixel::GroupSyncRead groupSyncReadCurrent(portHandler, packetHandler, ADDR_PRO_PRESENT_CURRENT, ADDR_PRO_PRESENT_CURRENT_LENGTH);
+
+    if (portHandler->openPort())
+    {
+        printf("Succeeded to open the port!\n");
+    }
+    if (portHandler->setBaudRate(BAUDRATE))
+    {
+        printf("Succeeded to change the baudrate!\n");
+    }
+
+ }
 /**
  * @brief Set the operating mode of the motors
  * 

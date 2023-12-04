@@ -15,10 +15,18 @@ public:
     float fTimePeriod;  // The time of one period
     float fTimePresent;
     Matrix<float, 4, 2> mfTimeForSwingPhase;  // startTime, endTime: LF, RF, LH, RH
+
+    float fSwingStatus[4][3];  //swing status,dettach - swing -attach , sum = 1;
+    int iStatusRunTimes[4][2];// 0-stance ,1-swing,
     Matrix<float, 6,1> vfTargetCoMVelocity;  // X, Y , Z ,yaw in world cordinate
     Matrix<float, 6,1> vfPresentCoMVelocity;  // X, Y , Z ,yaw in world cordinate
-    Matrix<float, 4, 3> mfTargetCoMPosition;  // X, Y , alpha in world cordinate
-    Matrix<float, 4, 3> mfTargetCoMPosture;
+    Matrix<float, 3, 1> vfTargetCoMPosition;  // com X, Y , Z in world cordinate
+    Matrix<float, 3, 1> vfTargetCoMPosture; //roll , pitch , yaw ,in world cordinate
+    //raw code :
+    Matrix<float, 4, 2> mfTimeForStancePhase;
+    Matrix<float, 4, 3> targetCoMPosition;
+    Matrix<float, 4, 3> targetCoMPosture;
+    //end 
     Matrix<float, 4,1> mfTimePresentForSwing;
     Matrix<float, 4, 3> mfShoulderPos;  // X-Y: LF, RF, LH, RH
     Matrix<float, 4, 3> mfStancePhaseStartPos;
@@ -48,23 +56,25 @@ public:
     //robot control
     //pump control
     uint8_t svStatus=0b00000000;
-    // API api;
-    // void AirControl();
-    // void PumpNegtive(int legNum);
-    // void PumpPositive(int legNum);
-    // void PumpAllNegtive();
-    // void PumpAllClose();
-    // //motor control
-    // vector<int> ID = {  
-    // 0,1,2,
-    // 3, 4, 5,
-    // 6,7,8
-    // ,9,10,11
-    // };
+    API api;
+    void AirControl();
+    void PumpNegtive(int legNum);
+    void PumpPositive(int legNum);
+    void PumpAllNegtive();
+    void PumpAllPositve();
+    void PumpAllClose();
+    //motor control
+    vector<int> ID = {  
+    0,1,2,
+    3, 4, 5,
+    6,7,8
+    ,9,10,11
+    };
     vector<float> vLastSetPos;
-    // DxlAPI dxlMotors;  //3000000  cannot hold 6 legs ttyUSB0 ttyAMA0
-    // void SetPos(Matrix<float,4,3> jointCmdPos);
-    // void SetTor(vector<float> setTor(12));
+    DxlAPI dxlMotors;  //3000000  cannot hold 6 legs ttyUSB0 ttyAMA0
+    void SetPos(Matrix<float,4,3> jointCmdPos);
+   
+    //void SetTor(vector<float> setTor);
     
 
 

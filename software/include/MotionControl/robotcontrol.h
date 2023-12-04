@@ -27,7 +27,7 @@ public:
     float fCtlRate;
     enum_CONTROLMODE m_eControlMode;  
     void Init();
-    // void UpdateFtsPresForce(vector<float> torque);
+    void UpdateFtsPresForce();
     void UpdateTargTor(Matrix<float, 3, 4> force);
     void ParaDeliver();
     void Control();
@@ -52,7 +52,7 @@ public:
     Matrix<float,3,1> vfVmcOmegaDBase;
     Matrix<float,3,1> vfVmcOmegaBase;
     void CalVmcCom();
-   // void UpdateImuData();
+    void UpdateImuData();
 
 
 };

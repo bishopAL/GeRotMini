@@ -20,25 +20,26 @@ void CRobotControl::Init(){
     // cal inertial
     m_fIxx=((m_fLength*m_fLength)+(m_fHeight*m_fHeight))*m_fMass/12;
 }
-// void CRobotControl::UpdateImuData()
-// {
-//     api.updateIMU();
-//     vfVmcOmegaBase<<api.fAcc;
-//     vfGravity<<api.fGyro;
-// }
+void CRobotControl::UpdateImuData()
+{
+    api.updateIMU();
+    // vfVmcOmegaBase<<api.fAcc;
+    // vfGravity<<api.fGyro;
+}
 
-// void CRobotControl::UpdateFtsPresForce()
-// {
-//     Matrix<float, 3, 4> temp;
-//     if(mfForce(2,3) - mfLastForce(2,3) > 0.3 || mfForce(2,3) - mfLastForce(2,3) < -0.3)
-//         temp.setZero();
-//     for(int i=0; i<3; i++)
-//         for(int j=0;j<4;j++)
-//             temp(i ,j ) = dxlMotors.present_torque[i+j*3];
-//     for (int i=0; i<4; i++)
-//         mfForce.col(i) = ForceLPF * mfLastForce.col(i) + (1-ForceLPF) * leg[i]._jacobian.transpose().inverse() * temp.col(i);
-//     mfLastForce = mfForce;
-// }
+void CRobotControl::UpdateFtsPresForce()
+{
+    Matrix<float, 3, 4> temp;
+    if(mfForce(2,3) - mfLastForce(2,3) > 0.3 || mfForce(2,3) - mfLastForce(2,3) < -0.3)
+        temp.setZero();
+    for(int i=0; i<3; i++)
+        for(int j=0;j<4;j++)
+            temp(i ,j ) = dxlMotors.present_torque[i+j*3];
+    for (int i=0; i<4; i++)
+        mfForce.col(i) = ForceLPF * mfLastForce.col(i) + (1-ForceLPF) * m_glLeg[i]->GetJacobian().transpose().inverse() * temp.col(i);
+       
+    mfLastForce = mfForce;
+}
 
 void CRobotControl::UpdateTargTor(Matrix<float, 3, 4> force)
 {
@@ -180,7 +181,7 @@ void CRobotControl::Control()
     }
 
 }
-
+#ifdef  VMCCONTROL
 void CRobotControl::CalVmcCom()
 {
     Matrix<float,3,3> mfTempASM; 
@@ -286,4 +287,4 @@ void CRobotControl::CalVmcCom()
         mfTargetForce.row(stanceLegNum[i/3])<<xOpt[i],xOpt[i+1];xOpt[i+2];
     }
 }
-
+#endif

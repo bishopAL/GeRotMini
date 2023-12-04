@@ -36,8 +36,10 @@ PROTOCOL_VERSION = 2.0
 class DxlAPI
 {
 public:
+    DxlAPI();
     DxlAPI(char *port, int baudrate_set, vector<int> ids, uint8_t type);
     ~DxlAPI();
+    void init(char *port, int baudrate_set, vector<int> ids, uint8_t type);
     void setOperatingMode(uint8_t mode); //3 position control; 0 current control
     void torqueEnable();
     void torqueDisable();

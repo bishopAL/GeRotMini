@@ -1,8 +1,8 @@
 #include"robotcontrol.h"
 
 #define CHECK_RET(q) if((q)==false){return 0;}
-CRobotControl rbt(120.0,60.0,20.0,500.0,ADMITTANCE);
-bool runFlag=0;
+CRobotControl rbt(110.0,60.0,20.0,800.0,ADMITTANCE);
+bool runFlag=1;
 void *udpConnect(void *data)
 {
 
@@ -45,7 +45,8 @@ void *robotStateUpdateSend(void *data)
 {
     Matrix<float,4,2> TimeForSwingPhase;
     Matrix<float, 4, 3> InitPos;
-    Matrix<float, 6,1> TCV={ VELX, 0, 0,0,0,0 };// X, Y , alpha 
+    Matrix<float, 6,1> TCV;
+   TCV << VELX, 0, 0,0,0,0 ;// X, Y , alpha 
     
     
     //motors initial
@@ -80,10 +81,11 @@ void *robotStateUpdateSend(void *data)
                          TimeForGaitPeriod/4.0 *3,    TimeForGaitPeriod-TimePeriod,
                          TimeForGaitPeriod/4.0  ,          TimeForGaitPeriod/4.0 *2;
    rbt.SetPhase(TimePeriod, TimeForGaitPeriod, TimeForSwingPhase);
+//    cout<<rbt.mfTimeForSwingPhase<<endl;
 
 #if(INIMODE==2)
-   float  float_initPos[12]={45,45,-45,45,-45,-45,-45,45,-45,-45,-45,-45};
-   string2float("../include/initPos.csv", float_initPos);//Foot end position
+   float  float_initPos[12]={60,60,-30,60,-60,-30,-60,60,-30,-60,-60,-30};
+   //string2float("../include/initPos.csv", float_initPos);//Foot end position
     for(int i=0; i<4; i++)
         for(int j=0;j<3;j++)
         {
@@ -96,8 +98,10 @@ void *robotStateUpdateSend(void *data)
    
     rbt.SetCoMVel(TCV);
     rbt.InverseKinematics(rbt.mfLegCmdPos);
+  
+  
 #if(INIMODE==2)  
-    //rbt.SetPos(rbt.mfJointCmdPos);
+    rbt.SetPos(rbt.mfJointCmdPos);
 #endif
 
     rbt.mfTargetPos = rbt.mfLegCmdPos;
@@ -107,7 +111,6 @@ void *robotStateUpdateSend(void *data)
     {
         if(runFlag)
         {
-            cout<<runFlag<<endl;
             struct timeval startTime,endTime;
             double timeUse;
             gettimeofday(&startTime,NULL);
@@ -144,21 +147,26 @@ void *runImpCtller(void *data)
         {
             gettimeofday(&startTime,NULL);
             /* get motors data  */
-            //while( motors.getTorque()==false || motors.getPosition()==false || motors.getVelocity()==false );
-            /* update the data IMP need */
-            // rbt.UpdatejointPresPos();         
-            // rbt.UpdatejointPresVel();
-            // rbt.ForwardKinematics(1);
-            // rbt.UpdateJacobians();
-            // rbt.UpdateFtsPresVel();
+            //
+            rbt.dxlMotors.getTorque();
+            rbt.dxlMotors.getPosition();
+            rbt.dxlMotors.getVelocity();
 
-            // rbt.UpdateFtsPresForce();  
+            /* update the data IMP need */
+            rbt.UpdatejointPresPos();         
+            rbt.UpdatejointPresVel();
+            rbt.ForwardKinematics(1);
+            rbt.UpdateJacobians();
+            rbt.UpdateFtsPresVel();
+
+            rbt.UpdateFtsPresForce();  
 
             // rbt.inverseKinematics(rbt.target_pos); //    within rbtCtller
             //rbt.mfTargetPos<<rbt.mfInitFootPos;
             rbt.Control();   
-            // rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
-            rbt.InverseKinematics(rbt.mfLegCmdPos);
+            rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
+            // rbt.InverseKinematics(rbt.mfLegCmdPos); //    within rbtCtller
+           // cout<<"mfJointCmdPos:"<<rbt.mfJointCmdPos;
             // cout<<"target_pos: \n"<<rbt.target_pos<<endl;
             // cout<<"legPresPos: \n"<<rbt.mfLegPresPos<<"; \nxc: \n"<<rbt.xc<<endl;
             // cout<<"force:"<<endl<<rbt.mfForce.transpose()<<endl;
@@ -167,7 +175,7 @@ void *runImpCtller(void *data)
             // cout<<endl;
 
             /*      Admittance control      */
-            //rbt.setPos(rbt.mfJointCmdPos);
+            rbt.SetPos(rbt.mfJointCmdPos);
 
             /*      Impedance control      */
             // for(int i=0; i<4; i++)  

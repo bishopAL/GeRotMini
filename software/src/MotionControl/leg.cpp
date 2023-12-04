@@ -4,7 +4,7 @@ CLeg::CLeg(enum_LEGNAME name,float L1,float L2,float L3)
 {
     m_sName=name;
     m_fL1=L1;
-    m_fL2=m_fL2;
+    m_fL2=L2;
     m_fL3=L3;
 
 }
