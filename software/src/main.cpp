@@ -165,13 +165,13 @@ void *runImpCtller(void *data)
             //rbt.mfTargetPos<<rbt.mfInitFootPos;
             rbt.Control();   
             rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
-            // rbt.InverseKinematics(rbt.mfLegCmdPos); //    within rbtCtller
-           // cout<<"mfJointCmdPos:"<<rbt.mfJointCmdPos;
-            // cout<<"target_pos: \n"<<rbt.target_pos<<endl;
+            // rbt.InverseKinematics(rbt.mfLegCmdPos); //    without force control
+
+            // cout<<"mfJointCmdPos:"<<rbt.mfJointCmdPos;
+            // cout<<"target_pos: \n"<<rbt.mfTargetPos<<endl;
             // cout<<"legPresPos: \n"<<rbt.mfLegPresPos<<"; \nxc: \n"<<rbt.xc<<endl;
             // cout<<"force:"<<endl<<rbt.mfForce.transpose()<<endl;
-            // // cout<<"xc_dotdot: \n"<<rbt.xc_dotdot<<"; \nxc_dot: \n"<<rbt.xc_dot<<"; \nxc: \n"<<rbt.xc<<endl;
-            // // cout<<"legPresPos: \n"<<rbt.legPresPos<<endl;
+            // cout<<"xc_dotdot: \n"<<rbt.mfXcDotDot<<"; \nxc_dot: \n"<<rbt.mfXcDot<<"; \nxc: \n"<<rbt.mfXc<<endl;
             // cout<<endl;
 
             /*      Admittance control      */

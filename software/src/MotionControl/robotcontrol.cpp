@@ -101,16 +101,16 @@ void CRobotControl::Control()
             + mfKstance.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))
             + mfBstance.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum)) ;
             // + mfMstance.row(legNum).cwiseProduct(mfTargetAcc.row(legNum) - mfXcDotDot.row(legNum));
-            cout<<"legNum_"<<(int)legNum<<":"<<m_glLeg[legNum]->GetLegStatus()<<endl;
-            cout<<"K__stance_"<<(int)legNum<<"  "<<mfKstance.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))<<endl;
-            cout<<"B__stance_"<<(int)legNum<<"  "<<mfBstance.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum))<<endl;
+            // cout<<"legNum_"<<(int)legNum<<":"<<m_glLeg[legNum]->GetLegStatus()<<endl;
+            // cout<<"K__stance_"<<(int)legNum<<"  "<<mfKstance.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))<<endl;
+            // cout<<"B__stance_"<<(int)legNum<<"  "<<mfBstance.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum))<<endl;
             // cout<<"mfForce"<<mfForce.transpose().row(legNum)<<endl;
         }
         UpdateTargTor(mfForce);
         // cout<<"mfTargetPos:"<<endl<<mfTargetPos<<endl;
         // cout<<"mfLegPresPos:"<<endl<<mfLegPresPos<<endl;
-        cout<<"mfForce:"<<endl<<mfForce<<endl;
-        cout<<"mfTargetTor:"<<endl<<mfTargetTor<<endl<<endl;
+        // cout<<"mfForce:"<<endl<<mfForce<<endl;
+        // cout<<"mfTargetTor:"<<endl<<mfTargetTor<<endl<<endl;
     }
     else if(m_eControlMode == ADMITTANCE)  // Admittance control    mfXcDotDot = 0 + M/-1*( - footForce[i][0] + refForce[i] - B * (pstFootVel[i][0] - 0) - K * (pstFootPos[i][0] - targetFootPos(i,0)));
     {
@@ -141,9 +141,9 @@ void CRobotControl::Control()
                     + mfKdetach.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))
                     + mfBdetach.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum))   
                     + mfMdetach.row(legNum).cwiseInverse().cwiseProduct( mfTargetForce.row(legNum) - mfForce.transpose().row(legNum) );
-                    cout<<"K__detach_"<<(int)legNum<<"  "<<mfKdetach.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))<<endl;
-                    cout<<"B__detach_"<<(int)legNum<<"  "<<mfBdetach.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum))<<endl;
-                    cout<<"M__detach_"<<(int)legNum<<"  "<<mfMdetach.row(legNum).cwiseInverse().cwiseProduct( mfTargetForce.row(legNum) - mfForce.transpose().row(legNum) )<<endl;
+                    // cout<<"K__detach_"<<(int)legNum<<"  "<<mfKdetach.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))<<endl;
+                    // cout<<"B__detach_"<<(int)legNum<<"  "<<mfBdetach.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum))<<endl;
+                    // cout<<"M__detach_"<<(int)legNum<<"  "<<mfMdetach.row(legNum).cwiseInverse().cwiseProduct( mfTargetForce.row(legNum) - mfForce.transpose().row(legNum) )<<endl;
                     break;
 
                 case attach: //attach
@@ -151,9 +151,9 @@ void CRobotControl::Control()
                     + mfKattach.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))
                     + mfBattach.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum)) 
                     + mfMattach.row(legNum).cwiseInverse().cwiseProduct( mfTargetForce.row(legNum) - mfForce.transpose().row(legNum) );
-                    cout<<"K__attach_"<<(int)legNum<<"  "<<mfKattach.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))<<endl;
-                    cout<<"B__attach_"<<(int)legNum<<"  "<<mfBattach.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum))<<endl;
-                    cout<<"M__attach_"<<(int)legNum<<"  "<<mfMattach.row(legNum).cwiseInverse().cwiseProduct( mfTargetForce.row(legNum) - mfForce.transpose().row(legNum) )<<endl<<endl;                 
+                    // cout<<"K__attach_"<<(int)legNum<<"  "<<mfKattach.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))<<endl;
+                    // cout<<"B__attach_"<<(int)legNum<<"  "<<mfBattach.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum))<<endl;
+                    // cout<<"M__attach_"<<(int)legNum<<"  "<<mfMattach.row(legNum).cwiseInverse().cwiseProduct( mfTargetForce.row(legNum) - mfForce.transpose().row(legNum) )<<endl<<endl;                 
                     break;
             }
             // cout<<stepFlag[legNum]<<endl;

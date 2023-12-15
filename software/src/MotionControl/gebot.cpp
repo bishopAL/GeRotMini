@@ -6,7 +6,7 @@
 
 CGebot::CGebot(float length,float width,float height,float mass)
 {
-    dxlMotors.init("/dev/ttyAMA0", 3000000, ID, 2);  //3000000  cannot hold 6 legs ttyUSB0 ttyAMA0
+    dxlMotors.init("/dev/ttyAMA0", 3000000, ID, 2);  // CAN NOT 4M.   ttyUSB0 ttyAMA0
     m_glLeg[0] = new CLeg(LF,60.0,60.0,30.0);
     m_glLeg[1] = new CLeg(RF,60.0,60.0,30.0);
     m_glLeg[2] = new CLeg(LH,60.0,60.0,30.0);
@@ -156,7 +156,7 @@ void CGebot::UpdateFtsPresVel()
 }
 void CGebot::NextStep()
 {
-           if (abs(fTimePresent - fTimeForGaitPeriod ) < 1e-4)  // check if present time has reach the gait period                                                               
+    if (abs(fTimePresent - fTimeForGaitPeriod ) < 1e-4)  // check if present time has reach the gait period                                                               
     {                                                            // if so, set it to 0.0
         fTimePresent = 0.0;
         // legCmdPos = initFootPos;
@@ -220,18 +220,16 @@ void CGebot::NextStep()
 
             mfLegCmdPos(legNum, 0) = mfStancePhaseStartPos(legNum, 0) + (mfShoulderPos(legNum, 0) - oneShoulderPos_3x1(0));
             mfLegCmdPos(legNum, 1) = mfStancePhaseEndPos(legNum, 1) + (mfShoulderPos(legNum, 1) - oneShoulderPos_3x1(1));
-            cout<<"stance-"<<(unsigned)legNum<<"="<<mfLegCmdPos(legNum, 0)<<endl;
+            // cout<<"stance-"<<(unsigned)legNum<<"="<<mfLegCmdPos(legNum, 0)<<endl;
         }
         else    //swing phase 
         {
-            cout<<"swing-"<<(unsigned)legNum<<endl;
+            // cout<<"swing-"<<(unsigned)legNum<<endl;
             Matrix<float, 1, 3> swingPhaseVelocity = -(mfStancePhaseEndPos.row(legNum) - mfStancePhaseStartPos.row(legNum)) / fTimeForSwing[legNum] ;
             float x, xh, m, n, k;
-            cout<<"swingPhaseVelocity="<<swingPhaseVelocity.array()<<endl;
+            // cout<<"swingPhaseVelocity="<<swingPhaseVelocity.array()<<endl;
             if( ( mfTimePresentForSwing(legNum) - fTimeForSwing[legNum] * TimeHeight ) < 1e-4 && mfTimePresentForSwing(legNum) > -1e-4 && swingPhaseVelocity( 0, 0) != 0)
             {            
-                 cout<<"6-"<<endl;
-
                 for(uint8_t pos=0; pos<2; pos++)
                     mfLegCmdPos(legNum, pos) += swingPhaseVelocity(pos) * fTimePeriod * swingVelFactor;     // for vertical down
                 x = mfLegCmdPos(legNum, 0) - mfStancePhaseEndPos(legNum, 0);
@@ -245,24 +243,20 @@ void CGebot::NextStep()
                 /* z = -k * ( x - xh )^2 + H + z0 */
                 k = StepHeight / xh / xh;
                 mfLegCmdPos(legNum, 2) = -k * (x - xh) * (x - xh) + StepHeight + mfStancePhaseEndPos(legNum, 2);
-                cout<<"3"<<endl;
             }
             else if( mfTimePresentForSwing(legNum) - fTimeForSwing[legNum] < 1e-4 && swingPhaseVelocity( 0, 0) != 0)
             {
-                 cout<<"7"<<endl;
-
                 for(uint8_t pos=0; pos<2; pos++)
                     mfLegCmdPos(legNum, pos) += swingPhaseVelocity(pos) * fTimePeriod * (1 - swingVelFactor * TimeHeight) / (1 - TimeHeight); // targetCoMVelocity
                 mfLegCmdPos(legNum, 2) -= StepHeight / fTimeForSwing[legNum] / (1 - TimeHeight) * fTimePeriod;
-                cout<<"4"<<endl;
             }  
 
             if(swingPhaseVelocity( 0, 0) == 0)      //first step
             {
                 static int i=1;
                 i++;
-                cout<<"i = "<<i<<endl;
-                cout<<"time="<<fTimePresent<<endl;
+                // cout<<"i = "<<i<<endl;
+                // cout<<"time="<<fTimePresent<<endl;
                 if( ( mfTimePresentForSwing(legNum) - fTimeForSwing[legNum]/2 ) < 1e-4 && mfTimePresentForSwing(legNum) > -1e-4)
                     mfLegCmdPos(legNum, 2) += StepHeight / fTimeForSwing[legNum] * 2 * fTimePeriod;
                 if( ( mfTimePresentForSwing(legNum) - fTimeForSwing[legNum]/2 ) > -1e-4)

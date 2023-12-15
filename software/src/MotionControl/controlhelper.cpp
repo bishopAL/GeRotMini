@@ -1,22 +1,29 @@
 #include "controlhelper.h"
+/**
+ * @brief 
+ * Open the file to read float data to dest.    
+ * In the file, ',' must be used after every data, including the last data.  
+ * @param add The address of the file to read, like "../include/init_Motor_angle.csv"
+ * @param dest Floating pointer to store datas.
+ */
 void string2float(std::string add, float* dest)
 {
-    // char data_char[8000],*char_float;
-    // const char *a=",";  //Separate datas
-    // int i=0;
-    // std::ifstream inidate;
-    // inidata.open(add);
-    // if (inidata)    cout<<"file open Successful"<<endl;
-    // else    cout<<"file open FAIL"<<endl;
-    // inidata.read(data_char,8000);
-    // char_float=strtok(data_char, a);
-    // while(char_float!=NULL)
-    // {        
-    //     dest[i++] = stof(char_float);
-    //     //cout<<'|'<<dest[i-1]<<endl;
-    //     char_float=strtok(NULL, a);
-    // }
-    // inidata.close();
+    char data_char[8000],*char_float;
+    const char *a=",";  //Separate datas
+    int i=0;
+    ifstream inidata;
+    inidata.open(add);
+    if (inidata)    cout<<"file open Successful"<<endl;
+    else    cout<<"file open FAIL"<<endl;
+    inidata.read(data_char,8000);
+    char_float=strtok(data_char, a);
+    while(char_float!=NULL)
+    {        
+        dest[i++] = stof(char_float);
+        //cout<<'|'<<dest[i-1]<<endl;
+        char_float=strtok(NULL, a);
+    }
+    inidata.close();
 }
 
 void printSvStatus(unsigned char svStatus)
