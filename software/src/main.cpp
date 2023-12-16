@@ -123,15 +123,17 @@ void *robotStateUpdateSend(void *data)
    
     rbt.SetCoMVel(TCV);
     rbt.InverseKinematics(rbt.mfLegCmdPos);
-  
+    rbt.mfTargetPos = rbt.mfLegCmdPos;
   
 #if(INIMODE==2)  
     rbt.SetPos(rbt.mfJointCmdPos);
 #endif
-
-    rbt.mfTargetPos = rbt.mfLegCmdPos;
-    rbt.bInitFlag = 1;
     usleep(1e5);
+    for (size_t i = 0; i < 4; i++)
+        rbt.PumpNegtive(i);
+    usleep(1e5);
+    rbt.bInitFlag = 1;
+
     while(1)
     {
         if(runFlag)
@@ -165,7 +167,7 @@ void *runImpCtller(void *data)
 
     while(rbt.bInitFlag == 0) //wait for initial
         usleep(1e2);
-    usleep(1e5);
+
     while (1)
     {
         if(runFlag)

@@ -437,11 +437,11 @@ void CGebot::AirControl()
         {
             PumpNegtive(legNum);
         }
-        else if(m_glLeg[legNum]->GetLegStatus()==detach)
+        else if(m_glLeg[legNum]->GetLegStatus()==stance)// Apply negative pressure in advance to solve gas path delay.
         {
-           PumpPositive(legNum);
+            if(iStatusCounter[legNum] <= ceil(iStatusCounterBuffer[legNum][int(stance)] * 0.04) )   
+                PumpPositive(legNum);
         }
-
         //cout<<"svStatus:"<<std::setw(2)<<svStatus<<endl;
     }
 
