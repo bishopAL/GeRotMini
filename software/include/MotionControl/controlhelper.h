@@ -3,7 +3,7 @@
 #include "head.h"
 #include "udpsocket.h"
 /***********motor control helper*************/
-enum enum_LEGSTATUS{swing=0,attach,stance,detach}; 
+enum enum_LEGSTATUS{detach=0, swingUp, swingDown, attach, recover, stance}; // Status belongs to phase. Swing phase: detach, swingUp, swingDown, attach; || Stance phase: recover, stance
 enum enum_LEGNAME{LF,RF,LH,RH};
 enum enum_CONTROLMODE{ADMITTANCE,IMPEDANCE};
 void string2float(std::string add, float* dest);

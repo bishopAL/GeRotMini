@@ -70,6 +70,14 @@ void CRobotControl::ParaDeliver()
     #endif
 }
 
+/**
+ * @brief 
+ * The parameters in .csv must conform to the order of 'mode'.
+ * @param mK 
+ * @param mB 
+ * @param mM 
+ * @param mode the order of parameter: 0-stance, 1-swing, 2-detach, 3-attach
+ */
 void CRobotControl::ChangePara(Matrix<float, 4, 3> mK, Matrix<float, 4, 3> mB, Matrix<float, 4, 3> mM,int mode)
 {
         switch(mode) 
@@ -118,7 +126,8 @@ void CRobotControl::Control()
         {   
             switch(m_glLeg[legNum]->GetLegStatus())
             {
-                case stance: //stance
+                case stance:  //stance
+                case recover: // or recover
                     mfXcDotDot.row(legNum) =  mfTargetAcc.row(legNum) 
                     + mfKstance.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))
                     + mfBstance.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum)) 
@@ -127,8 +136,8 @@ void CRobotControl::Control()
                     // cout<<"B__stance_"<<(int)legNum<<"  "<<mfBstance.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum))<<endl;
                     // cout<<"M__stance_"<<(int)legNum<<"  "<<mfMstance.row(legNum).cwiseInverse().cwiseProduct( mfTargetForce.row(legNum) - mfForce.transpose().row(legNum) )<<endl;
                     break;
-
-                case swing: //swing
+                case swingUp:
+                case swingDown: //swing
                     mfXcDotDot.row(legNum) =  mfTargetAcc.row(legNum) 
                     + mfKswing.row(legNum).cwiseProduct(mfTargetPos.row(legNum) - mfLegPresPos.row(legNum))
                     + mfBwing.row(legNum).cwiseProduct(mfTargetVel.row(legNum) - mfLegPresVel.row(legNum)) 

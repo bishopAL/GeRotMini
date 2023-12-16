@@ -3,8 +3,9 @@
 
 // #define VMCCONTROL
 #define ForceLPF  0.9
-#define StepHeight  30.0
-#define TimeHeight (2.0/4.0)  // time for trajectory within vertical part
+#define StepHeight  15.0
+#define Press  14.0
+#define TimeHeight (2.0/4.0)  // time for trajectory without vertical part
 #define swingVelFactor 3      
 #define THREAD1_ENABLE 1
 #define THREAD2_ENABLE 1

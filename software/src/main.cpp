@@ -46,7 +46,7 @@ void *robotStateUpdateSend(void *data)
     Matrix<float,4,2> TimeForSwingPhase;
     Matrix<float, 4, 3> InitPos;
     Matrix<float, 6,1> TCV;
-   TCV << VELX, 0, 0,0,0,0 ;// X, Y , alpha 
+    TCV << VELX, 0, 0,0,0,0 ;// X, Y , alpha 
     
     
     //motors initial
@@ -76,16 +76,41 @@ void *robotStateUpdateSend(void *data)
     //                      TimeForGaitPeriod/2.0,   TimeForGaitPeriod, 
     //                      TimeForGaitPeriod/2.0,   TimeForGaitPeriod, 
     //                      0,                       TimeForGaitPeriod/2.0;
-    TimeForSwingPhase<< TimeForGaitPeriod/4.0 *2,          TimeForGaitPeriod/4.0 *3,   // tripod
-                         0,             TimeForGaitPeriod/4.0,
-                         TimeForGaitPeriod/4.0 *3,    TimeForGaitPeriod-TimePeriod,
-                         TimeForGaitPeriod/4.0  ,          TimeForGaitPeriod/4.0 *2;
-   rbt.SetPhase(TimePeriod, TimeForGaitPeriod, TimeForSwingPhase);
+    // TimeForSwingPhase<< TimeForGaitPeriod/4.0 *2,          TimeForGaitPeriod/4.0 *3,   // tripod
+    //                      0,             TimeForGaitPeriod/4.0,
+    //                      TimeForGaitPeriod/4.0 *3,    TimeForGaitPeriod,
+    //                      TimeForGaitPeriod/4.0  ,          TimeForGaitPeriod/4.0 *2;
+    TimeForSwingPhase<< 8*TimeForGaitPeriod/16, 	11*TimeForGaitPeriod/16,		
+                        0,		 		 					3*TimeForGaitPeriod/16,		
+                        12*TimeForGaitPeriod/16, 	15*TimeForGaitPeriod/16,		
+                        4*TimeForGaitPeriod/16, 	7*TimeForGaitPeriod/16;
+    rbt.SetPhase(TimePeriod, TimeForGaitPeriod, TimeForSwingPhase);
+   
+//    for (size_t i = 0; i < 4; i++)
+//    {
+//     cout<<rbt.iStatusCounter[i]<<endl;
+//     cout<<"legstatus_"<<i<<": "<<(rbt.m_glLeg[i]->GetLegStatus())<<endl;
+//    }
+// for (size_t i = 0; i < 4; i++)
+// {
+//     for (size_t j = 0; j < 5; j++)
+//     {
+//         cout<<rbt.iStatusCounterBuffer[i][j]<<",";
+//     }
+//     cout<<endl;
+// }
+
+   
+   
 //    cout<<rbt.mfTimeForSwingPhase<<endl;
 
 #if(INIMODE==2)
-   float  float_initPos[12]={60,60,-30,60,-60,-30,-60,60,-30,-60,-60,-30};
-   //string2float("../include/initPos.csv", float_initPos);//Foot end position
+//    float  float_initPos[12]={    60, 60, -30,
+//                                  60,-60, -30,
+//                                 -60, 60, -30,
+//                                 -60,-60, -30};
+    float  float_initPos[12];
+    string2float("../include/initPos.csv", float_initPos);//Foot end position
     for(int i=0; i<4; i++)
         for(int j=0;j<3;j++)
         {
@@ -117,7 +142,7 @@ void *robotStateUpdateSend(void *data)
             //If stay static, annotate below one line.
             rbt.NextStep();//
             rbt.ParaDeliver();
-            // cout<<"LegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;
+            cout<<"LegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;
 
             gettimeofday(&endTime,NULL);
             timeUse = 1e6*(endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
@@ -147,7 +172,6 @@ void *runImpCtller(void *data)
         {
             gettimeofday(&startTime,NULL);
             /* get motors data  */
-            //
             rbt.dxlMotors.getTorque();
             rbt.dxlMotors.getPosition();
             rbt.dxlMotors.getVelocity();
@@ -158,14 +182,12 @@ void *runImpCtller(void *data)
             rbt.ForwardKinematics(1);
             rbt.UpdateJacobians();
             rbt.UpdateFtsPresVel();
-
             rbt.UpdateFtsPresForce();  
 
-            // rbt.inverseKinematics(rbt.target_pos); //    within rbtCtller
             //rbt.mfTargetPos<<rbt.mfInitFootPos;
             rbt.Control();   
-            rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
-            // rbt.InverseKinematics(rbt.mfLegCmdPos); //    without force control
+            // rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
+            rbt.InverseKinematics(rbt.mfLegCmdPos); //    Postion control
 
             // cout<<"mfJointCmdPos:"<<rbt.mfJointCmdPos;
             // cout<<"target_pos: \n"<<rbt.mfTargetPos<<endl;

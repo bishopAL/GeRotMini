@@ -17,7 +17,9 @@ public:
     Matrix<float, 4, 2> mfTimeForSwingPhase;  // startTime, endTime: LF, RF, LH, RH
 
     float fSwingStatus[4][3];  //swing status,dettach - swing -attach , sum = 1;
-    int iStatusRunTimes[4][2];// 0-stance ,1-swing,
+    float fSwingPhaseStatusPart[4];   //swing phase status, dettach - swingUp - swingDown - attach , sum = 1;
+    float fStancePhaseStatusPart[2];  // //stance phase status, recover - stance , sum = 1;
+    int iStatusCounter[4], iStatusCounterBuffer[4][6];
     Matrix<float, 6,1> vfTargetCoMVelocity;  // X, Y , Z ,yaw in world cordinate
     Matrix<float, 6,1> vfPresentCoMVelocity;  // X, Y , Z ,yaw in world cordinate
     Matrix<float, 3, 1> vfTargetCoMPosition;  // com X, Y , Z in world cordinate
@@ -41,6 +43,7 @@ public:
     Matrix<float, 4, 3>  mfJointPresPos;  // present motor 0-11
     Matrix<float, 4, 3>  mfJointPresVel;  // present motor 0-11
     Matrix<float, 4, 3>  mfJointCmdVel; 
+    Matrix<float, 1, 3> mfSwingVelocity;
    
     CGebot(float length,float width,float height,float mass);
     void SetInitPos(Matrix<float, 4, 3> initPosition);
@@ -76,7 +79,7 @@ public:
    
     //void SetTor(vector<float> setTor);
     
-
+    void UpdateLegStatus(int legNum);
 
 
 };
