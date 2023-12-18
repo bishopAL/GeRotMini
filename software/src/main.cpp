@@ -141,7 +141,7 @@ void *robotStateUpdateSend(void *data)
 //    }
 // for (size_t i = 0; i < 4; i++)
 // {
-//     for (size_t j = 0; j < 5; j++)
+//     for (size_t j = 0; j < 6; j++)
 //     {
 //         cout<<rbt.iStatusCounterBuffer[i][j]<<",";
 //     }
@@ -179,7 +179,7 @@ void *robotStateUpdateSend(void *data)
     usleep(1e5);
     for (size_t i = 0; i < 4; i++)
         rbt.PumpNegtive(i);
-    usleep(1e5);
+    usleep(1e6);
     rbt.bInitFlag = 1;
 
     while(1)
@@ -191,6 +191,7 @@ void *robotStateUpdateSend(void *data)
             gettimeofday(&startTime,NULL);
             //If stay static, annotate below one line.
             rbt.NextStep();
+            rbt.AirControl();
             rbt.AttitudeCorrection();
             
             rbt.ParaDeliver();
@@ -241,8 +242,8 @@ void *runImpCtller(void *data)
 
             //rbt.mfTargetPos<<rbt.mfInitFootPos;
             rbt.Control();   
-            // rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
-            rbt.InverseKinematics(rbt.mfTargetPos); //    Postion control
+            rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
+            // rbt.InverseKinematics(rbt.mfTargetPos); //    Postion control
 
             // cout<<"mfJointCmdPos:"<<rbt.mfJointCmdPos;
             // cout<<"target_pos: \n"<<rbt.mfTargetPos<<endl;

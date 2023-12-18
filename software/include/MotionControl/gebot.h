@@ -20,6 +20,8 @@ public:
     float fSwingPhaseStatusPart[4];   //swing phase status, dettach - swingUp - swingDown - attach , sum = 1;
     float fStancePhaseStatusPart[2];  // //stance phase status, recover - stance , sum = 1;
     int iStatusCounter[4], iStatusCounterBuffer[4][6];
+    float fStepHeight;
+
     Matrix<float, 6,1> vfTargetCoMVelocity;  // X, Y , Z ,yaw in world cordinate
     Matrix<float, 6,1> vfPresentCoMVelocity;  // X, Y , Z ,yaw in world cordinate
     Matrix<float, 3, 1> vfTargetCoMPosition;  // com X, Y , Z in world cordinate
@@ -40,9 +42,9 @@ public:
     Matrix<float, 4, 3> mfLegPresVel;  // present velocity of foot  in shoulder coordinate, in order LF, RF, LH, RH; X-Y-Z
     Matrix<float, 4, 3> mfLegLastVel;   //last velocity of foot to shoulder,for filter
     Matrix<float, 4, 3> mfJointCmdPos;  // command joint angle 0-11
-    Matrix<float, 4, 3>  mfJointPresPos;  // present motor 0-11
-    Matrix<float, 4, 3>  mfJointPresVel;  // present motor 0-11
-    Matrix<float, 4, 3>  mfJointCmdVel; 
+    Matrix<float, 4, 3> mfJointPresPos;  // present motor 0-11
+    Matrix<float, 4, 3> mfJointPresVel;  // present motor 0-11
+    Matrix<float, 4, 3> mfJointCmdVel; 
     Matrix<float, 1, 3> mfSwingVelocity;
    
     CGebot(float length,float width,float height,float mass);

@@ -259,6 +259,10 @@ void CGebot::NextStep()
     {   
         UpdateLegStatus(legNum);
         enum_LEGSTATUS ls=m_glLeg[legNum]->GetLegStatus();
+        if(legNum<2)
+            fStepHeight = StepHeight_F;
+        else
+            fStepHeight = StepHeight_H;
         
         // cout<<"leg_"<<(int)legNum<<"_status: "<<(int)ls<<endl;
         if( ls == stance ) //stance phase
@@ -284,7 +288,7 @@ void CGebot::NextStep()
             float x, xh, m, n, k;
             if(mfSwingVelocity( 0, 0) == 0)      //first step
             {
-                mfLegCmdPos(legNum, 2) += StepHeight / (iStatusCounterBuffer[legNum][(int)detach] + iStatusCounterBuffer[legNum][(int)swingUp]);
+                mfLegCmdPos(legNum, 2) += fStepHeight / (iStatusCounterBuffer[legNum][(int)detach] + iStatusCounterBuffer[legNum][(int)swingUp]);
             }
             else 
             {            
@@ -299,8 +303,8 @@ void CGebot::NextStep()
                 // legCmdPos(legNum, 2) = -(x - m) * (x - m) + n + stancePhaseEndPos(legNum, 2);
 
                 /* z = -k * ( x - xh )^2 + H + z0 */
-                k = StepHeight / xh / xh;
-                mfLegCmdPos(legNum, 2) = -k * (x - xh) * (x - xh) + StepHeight + mfStancePhaseEndPos(legNum, 2);
+                k = fStepHeight / xh / xh;
+                mfLegCmdPos(legNum, 2) = -k * (x - xh) * (x - xh) + fStepHeight + mfStancePhaseEndPos(legNum, 2);
             }
         }
         else if( ls == swingDown )    //swing phase
@@ -310,7 +314,7 @@ void CGebot::NextStep()
                 for(uint8_t pos=0; pos<2; pos++)
                     mfLegCmdPos(legNum, pos) += mfSwingVelocity(pos) ;
             }   
-            mfLegCmdPos(legNum, 2) -= StepHeight / iStatusCounterBuffer[legNum][(int)ls];
+            mfLegCmdPos(legNum, 2) -= fStepHeight / iStatusCounterBuffer[legNum][(int)ls];
         }
         else if( ls == attach )    //swing phase
         {
@@ -322,8 +326,7 @@ void CGebot::NextStep()
         }
         //cout<<"legNum_"<<(int)legNum<<":"<<stepFlag[legNum]<<"  ";
     }
-
-    AirControl();
+   
     for(uint8_t legNum=0; legNum<4; legNum++)
     {
         if(m_glLeg[legNum]->GetLegStatus()!= stance) mfTimePresentForSwing(legNum) += fTimePeriod;
@@ -446,7 +449,7 @@ void CGebot::AirControl()
         }
         else if(m_glLeg[legNum]->GetLegStatus()==stance)// Apply negative pressure in advance to solve gas path delay.
         {
-            if(iStatusCounter[legNum] <= ceil(iStatusCounterBuffer[legNum][int(stance)] * 0.04) )   
+            if(iStatusCounter[legNum] <= ceil(iStatusCounterBuffer[legNum][int(stance)] * 0.06) )   
                 PumpPositive(legNum);
         }
         //cout<<"svStatus:"<<std::setw(2)<<svStatus<<endl;
