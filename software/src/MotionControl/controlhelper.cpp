@@ -13,8 +13,8 @@ void string2float(std::string add, float* dest)
     int i=0;
     ifstream inidata;
     inidata.open(add);
-    if (inidata)    cout<<"file open Successful"<<endl;
-    else    cout<<"file open FAIL"<<endl;
+    if (inidata)    cout<<add<<" file open Successful"<<endl;
+    else    cout<<add<<" file open FAIL"<<endl;
     inidata.read(data_char,8000);
     char_float=strtok(data_char, a);
     while(char_float!=NULL)

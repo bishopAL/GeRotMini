@@ -41,6 +41,54 @@ void *udpConnect(void *data)
 	srv_sock.Close();
 	return 0;
 }
+
+void *dataSave(void *data)
+{
+    struct timeval startTime,endTime;
+    double timeUse;
+    ofstream outputfile;
+    string add="../include/output.csv";
+    float fAngleZero[3];
+
+    // outputfile.open(add, ios::app); // All outputs are attached to the end of the file.
+    outputfile.open(add);   // cover the old file
+    if (outputfile)    cout<<add<<" file open Successful"<<endl;
+    else    cout<<add<<" file open FAIL"<<endl;
+    outputfile<<"Angle_pitch_roll_yaw:"<<endl;
+    
+    rbt.UpdateImuData();
+    for (int i = 0; i < 3; i++)
+        fAngleZero[i] = rbt.api.fAngle[i];
+
+    // WitCaliRefAngle();                               //  归零失败
+    // u16 xx = rbt.api.fAngle[0] * 32768.0f / 180.0f;  
+    // WitWriteReg(XREFROLL, xx); //sReg[Roll]          //  归零失败
+
+	while(1)
+	{
+        gettimeofday(&startTime,NULL);
+		//接收数据
+        rbt.UpdateImuData();
+        
+        for (int i = 0; i < 3; i++)
+        {
+            outputfile<<rbt.api.fAngle[i]-fAngleZero[i]<<",";  
+            cout<<"angle: "<<rbt.api.fAngle[i]-fAngleZero[i]<<endl;
+        }
+        outputfile<<endl;
+
+        gettimeofday(&endTime,NULL);
+        timeUse = 1e6*(endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
+        if(timeUse < 1e4)
+            usleep(1.0/loopRateDataSave*1e6 - (double)(timeUse) - 10); 
+        else
+            cout<<"dataSave: "<<timeUse<<endl;
+	}
+    outputfile.clear();
+    outputfile.close();
+}
+
+
 void *robotStateUpdateSend(void *data)
 {
     Matrix<float,4,2> TimeForSwingPhase;
@@ -146,9 +194,10 @@ void *robotStateUpdateSend(void *data)
             rbt.AttitudeCorrection();
             
             rbt.ParaDeliver();
-            cout<<"LegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;    
+            // rbt.UpdateImuData();     // segmentation fault
+            // cout<<"LegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;    
             // cout<<"TargetPos:\n"<<rbt.mfTargetPos<<endl<<endl; 
-            cout<<"Compensation:\n"<<rbt.mfCompensation<<endl<<endl; 
+            // cout<<"Compensation:\n"<<rbt.mfCompensation<<endl<<endl; 
 
             gettimeofday(&endTime,NULL);
             timeUse = 1e6*(endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
@@ -163,8 +212,6 @@ void *robotStateUpdateSend(void *data)
 
 void *runImpCtller(void *data)
 {
-    
-    
     struct timeval startTime,endTime;
     double timeUse;
     int run_times=0;    // for debugging
@@ -189,6 +236,8 @@ void *runImpCtller(void *data)
             rbt.UpdateJacobians();
             rbt.UpdateFtsPresVel();
             rbt.UpdateFtsPresForce();  
+
+            // rbt.UpdateImuData();
 
             //rbt.mfTargetPos<<rbt.mfInitFootPos;
             rbt.Control();   
@@ -226,7 +275,7 @@ int main(int argc, char ** argv)
 {   
     
     
-    pthread_t th1, th2, th3;
+    pthread_t th1, th2, th3, th4;
 	int ret;
     ret = pthread_create(&th1,NULL,udpConnect,NULL);
     if(ret != 0)
@@ -246,9 +295,17 @@ int main(int argc, char ** argv)
 		printf("create pthread3 error!\n");
 		exit(1);
 	}
+    ret = pthread_create(&th4,NULL,dataSave,NULL);
+    if(ret != 0)
+	{
+		printf("create pthread4 error!\n");
+		exit(1);
+	}
     
+    // pthread_join(th1, NULL);
     pthread_join(th2, NULL);
     pthread_join(th3, NULL);
+    pthread_join(th4, NULL);
     while(1);
 
     

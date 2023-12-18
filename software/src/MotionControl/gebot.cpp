@@ -3,10 +3,9 @@
 
 
 
-
 CGebot::CGebot(float length,float width,float height,float mass)
 {
-    dxlMotors.init("/dev/ttyAMA0", 3000000, ID, 2);  // CAN NOT 4M.   ttyUSB0 ttyAMA0
+    dxlMotors.init("/dev/ttyAMA0", 3000000, ID, 2);  // CAN NOT 4M.   ttyUSB0 ttyAMA0      
     m_glLeg[0] = new CLeg(LF,60.0,60.0,30.0);
     m_glLeg[1] = new CLeg(RF,60.0,60.0,30.0);
     m_glLeg[2] = new CLeg(LH,60.0,60.0,30.0);
@@ -261,7 +260,7 @@ void CGebot::NextStep()
         UpdateLegStatus(legNum);
         enum_LEGSTATUS ls=m_glLeg[legNum]->GetLegStatus();
         
-        cout<<"leg_"<<(int)legNum<<"_status: "<<(int)ls<<endl;
+        // cout<<"leg_"<<(int)legNum<<"_status: "<<(int)ls<<endl;
         if( ls == stance ) //stance phase
         {     
             for(uint8_t pos=0; pos<3; pos++)
@@ -397,7 +396,7 @@ void CGebot::InverseKinematics(Matrix<float, 4, 3> cmdpos)
 
 
 
-//robot's air control & imu update
+//robot's air control 
 //RF-RH-LH-LF
 void CGebot::PumpAllNegtive()
 {

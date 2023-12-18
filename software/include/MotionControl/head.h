@@ -4,11 +4,11 @@
 // #define VMCCONTROL
 #define ForceLPF  0.9
 #define StepHeight  15.0  //swingUp
-#define Press  14.0       //attach press
-#define CompensationDistanceA1 3     // AttitudeCorrection() Amble gait
-#define CompensationDistanceA2 7.5  
-#define CompensationDistanceA3 9  
-#define CompensationDistanceALL 5     // AttitudeCorrection() All stace phase
+#define Press  16.0       //attach press
+#define CompensationDistanceA1 0     // AttitudeCorrection() Amble gait
+#define CompensationDistanceA2 10  
+#define CompensationDistanceA3 12  
+#define CompensationDistanceALL 7     // AttitudeCorrection() All stace phase
 #define THREAD1_ENABLE 1
 #define THREAD2_ENABLE 1
 //  1:  Motor angle
@@ -18,6 +18,7 @@
 #define loopRateCommandUpdate 100.0   //hz
 #define loopRateStateUpdateSend 20.0   //hz
 #define loopRateImpCtller 100.0   //hz
+#define loopRateDataSave 10 //hz
 #define VELX 4.0    // mm  step length = VELX * timeForStancePhase        
 #define TimePeriod 0.05
 #define TimeForGaitPeriod 8
@@ -39,7 +40,6 @@
 #include "dynamixel.h"
 #include "api.h"
 #include <stdio.h>
-#include <unistd.h>
 #include <wiringPi.h> 
 #include<fstream>
 #include<sstream>

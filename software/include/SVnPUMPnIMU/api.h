@@ -20,6 +20,7 @@
 #include <string>
 #include "wit_c_sdk.h"
 #include "GestionINA219.h"
+#include "REG.h"
 
 #define I2C_ADD_PCF 0x20
 #define ACC_UPDATE		0x01

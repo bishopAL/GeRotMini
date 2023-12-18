@@ -3,7 +3,7 @@
 #include <wiringPi.h> 
 #include<bitset>
 using namespace std;
-#define DATALOG 1
+// #define DATALOG 1
 static volatile char s_cDataUpdate = 0;
 
 API::API()
@@ -21,7 +21,8 @@ API::API()
 	WitI2cFuncRegister(i2c_write, i2c_read);
 	WitRegisterCallBack(CopeSensorData);
 	WitDelayMsRegister(Delayms);
-    AutoScanSensor();
+    // AutoScanSensor();
+
     ina219.init(ADDR_40);
     ina219.reset();
     ina219.setCalibration_0_4A(_16V, B_12Bits_128S_69MS, S_12Bits_128S_69MS, ShuntAndBusVoltageContinuous);
@@ -48,14 +49,17 @@ void API::setPump(u8 num, u8 status)
 {
     digitalWrite(num, status);
 }
-
+/**
+ * @brief update IMU data, include Acc, Gyro, Angle
+ *   Roll Pitch Yaw (X Y Z axis) in the coordinate system of the sensor.
+ */
 void API::updateIMU()
 {
     WitReadReg(AX, 12);
     // usleep(500000);
     if(s_cDataUpdate)
     {
-        printf("\r\n");
+        // printf("\r\n");
         for(int i = 0; i < 3; i++)
         {
             fAcc[i] = sReg[AX+i] / 32768.0f * 16.0f;
@@ -75,7 +79,7 @@ void API::updateIMU()
             s_cDataUpdate &= ~ANGLE_UPDATE;
         }
         #ifdef DATALOG
-        cout<<fAngle[0]<<", "<<fAngle[1]<<", "<<fAngle[2]<<endl;
+        cout<<"Angle: "<<fAngle[0]<<", "<<fAngle[1]<<", "<<fAngle[2]<<endl;
         #endif
     }
 }
@@ -150,9 +154,9 @@ static void AutoScanSensor(void)
 {
 	int i, iRetry;
 	
-	// for(i = 0; i < 0x7F; i++)
-	// {
-		i=0x50;
+	for(i = 0x00; i < 0x7F; i++)    // 0x20     40     50
+	{
+		// i=0x50;      
 		WitInit(WIT_PROTOCOL_I2C, i);
 		iRetry = 2;
 		do
@@ -163,13 +167,13 @@ static void AutoScanSensor(void)
 			if(s_cDataUpdate != 0)
 			{
                 #ifdef DATALOG
-                cout<<"find %02X addr sensor\r\n";
+                printf("find %02X addr sensor\n", i);
                 #endif
 				return ;
 			}
 			iRetry--;
 		}while(iRetry);		
-	// }
+	}
     cout<<"can not find sensor\r\n";
 	cout<<"please check your connection\r\n";
 }

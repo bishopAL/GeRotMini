@@ -20,6 +20,10 @@ void CRobotControl::Init(){
     // cal inertial
     m_fIxx=((m_fLength*m_fLength)+(m_fHeight*m_fHeight))*m_fMass/12;
 }
+/**
+ * @brief Update imu data.
+ *  api.fAcc, fGyro, fAngle, Pitch Roll Yaw  in the coordinate system of the robot (Y X Z)
+ */
 void CRobotControl::UpdateImuData()
 {
     api.updateIMU();
