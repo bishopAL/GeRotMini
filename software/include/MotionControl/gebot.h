@@ -29,7 +29,7 @@ public:
     Matrix<float, 4, 3> targetCoMPosition;
     Matrix<float, 4, 3> targetCoMPosture;
     //end 
-    Matrix<float, 4,1> mfTimePresentForSwing;
+    Matrix<float, 4, 1> mfTimePresentForSwing;
     Matrix<float, 4, 3> mfShoulderPos;  // X-Y: LF, RF, LH, RH
     Matrix<float, 4, 3> mfStancePhaseStartPos;
     Matrix<float, 4, 3> mfStancePhaseEndPos;
@@ -80,6 +80,8 @@ public:
     //void SetTor(vector<float> setTor);
     
     void UpdateLegStatus(int legNum);
-
+    void AttitudeCorrection();
+    bool BSwingPhaseStartFlag, BSwingPhaseEndFlag;
+    Matrix<float, 4, 1> mfCompensation;
 
 };

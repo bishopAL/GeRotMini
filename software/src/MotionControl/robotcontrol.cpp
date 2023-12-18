@@ -47,12 +47,23 @@ void CRobotControl::UpdateTargTor(Matrix<float, 3, 4> force)
         mfTargetTor.col(legNum) = m_glLeg[legNum]->GetJacobian() * force.col(legNum); 
 }
 
+/**
+ * @brief Transfer data to Force Control, including TargetForce, TargetPos.
+ *  Noitce: mfTargetPos = mfLegCmdPos + mfCompensation if AttitudeCorrection() work.
+ */
 void CRobotControl::ParaDeliver()
 {
     #ifdef  VMCCONTROL
    // CalVmcCom();
     #else
+
+    // for (uint8_t legNum=0; legNum<4; legNum++)
+    // {
+    //     mfTargetPos(legNum, 2) = mfLegCmdPos(legNum, 2) + mfCompensation(0, legNum);
+    // }
     mfTargetPos = mfLegCmdPos;
+    mfTargetPos.col(2) = mfLegCmdPos.col(2) + mfCompensation.col(0);
+    
     for(uint8_t legNum=0; legNum<4; legNum++)
     {   
         switch(m_glLeg[legNum]->GetLegStatus())

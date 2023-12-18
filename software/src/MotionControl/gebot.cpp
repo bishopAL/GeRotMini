@@ -24,6 +24,10 @@ CGebot::CGebot(float length,float width,float height,float mass)
     fStancePhaseStatusPart[0]=0.1;//recover
     fStancePhaseStatusPart[1]=0.9;//stance
 
+    BSwingPhaseStartFlag = true;
+    BSwingPhaseEndFlag = 0;     //
+    mfCompensation.setZero();
+
     for(int i=0;i<12;++i)
         vLastSetPos.push_back(0);
     fTimePresent=0.0;
@@ -127,6 +131,8 @@ void CGebot::SetPhase(float tP, float tFGP, Matrix<float,4,2> tFSP)
 void CGebot::UpdateLegStatus(int legNum)
 {
     iStatusCounter[legNum]--;
+    // BSwingPhaseStartFlag = 0;
+    // BSwingPhaseEndFlag = 0;
     if(iStatusCounter[legNum] <= 0)
         switch(m_glLeg[legNum]->GetLegStatus())
         {
@@ -148,6 +154,7 @@ void CGebot::UpdateLegStatus(int legNum)
             mfStancePhaseStartPos(legNum) = mfLegCmdPos(legNum);
             for(int pos=0; pos<3; pos++)
                     targetCoMPosition(legNum, pos) = 0.0;
+            BSwingPhaseEndFlag = true;
             break;
         case recover:
             m_glLeg[legNum]->ChangeStatus(stance);
@@ -158,6 +165,7 @@ void CGebot::UpdateLegStatus(int legNum)
             iStatusCounter[legNum] = iStatusCounterBuffer[legNum][int(detach)];
             mfStancePhaseEndPos(legNum) = mfLegCmdPos(legNum);
             mfSwingVelocity = -(mfStancePhaseEndPos.row(legNum) - mfStancePhaseStartPos.row(legNum)) / (iStatusCounterBuffer[legNum][(int)detach] + iStatusCounterBuffer[legNum][(int)swingUp] + iStatusCounterBuffer[legNum][(int)swingDown]) ;
+            BSwingPhaseStartFlag = true;
             break;
         }
 }
@@ -443,6 +451,49 @@ void CGebot::AirControl()
                 PumpPositive(legNum);
         }
         //cout<<"svStatus:"<<std::setw(2)<<svStatus<<endl;
+    }
+}
+/**
+ * @brief Correct body tilt.
+ * Notice: Applicable to amble gait
+ */
+void CGebot::AttitudeCorrection()
+{
+    int legNum;
+    if(BSwingPhaseStartFlag == true )
+    {
+        BSwingPhaseStartFlag = 0;
+        for(legNum=0;legNum<4;legNum++)
+        {
+            switch(m_glLeg[legNum]->GetLegStatus()) // select swing leg
+            {
+            case detach:
+            case swingUp:
+            case swingDown:
+            case attach:
+                switch (legNum) //the number of swing leg is only 1 in amble gait   
+                {
+                case 0:
+                    mfCompensation<< 0, CompensationDistanceA3, CompensationDistanceA2, CompensationDistanceA1;
+                    break;
+                case 1:
+                    mfCompensation<< CompensationDistanceA3, 0, CompensationDistanceA1, CompensationDistanceA2;
+                    break;
+                case 2:
+                    mfCompensation<< CompensationDistanceA2, CompensationDistanceA1, 0, CompensationDistanceA3;
+                    break;
+                case 3:
+                    mfCompensation<< CompensationDistanceA1, CompensationDistanceA2, CompensationDistanceA3, 0;
+                    break;
+                }
+                break;
+            }
+        }
+    }
+    if(BSwingPhaseEndFlag == true )
+    {
+        BSwingPhaseEndFlag = 0;
+        mfCompensation<< CompensationDistanceALL, CompensationDistanceALL, CompensationDistanceALL, CompensationDistanceALL;
     }
 
 }

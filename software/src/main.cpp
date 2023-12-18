@@ -142,9 +142,13 @@ void *robotStateUpdateSend(void *data)
             double timeUse;
             gettimeofday(&startTime,NULL);
             //If stay static, annotate below one line.
-            rbt.NextStep();//
+            rbt.NextStep();
+            rbt.AttitudeCorrection();
+            
             rbt.ParaDeliver();
-            cout<<"LegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;
+            cout<<"LegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;    
+            // cout<<"TargetPos:\n"<<rbt.mfTargetPos<<endl<<endl; 
+            cout<<"Compensation:\n"<<rbt.mfCompensation<<endl<<endl; 
 
             gettimeofday(&endTime,NULL);
             timeUse = 1e6*(endTime.tv_sec - startTime.tv_sec) + endTime.tv_usec - startTime.tv_usec;
@@ -189,7 +193,7 @@ void *runImpCtller(void *data)
             //rbt.mfTargetPos<<rbt.mfInitFootPos;
             rbt.Control();   
             // rbt.InverseKinematics(rbt.mfXc);   //    Admittance control
-            rbt.InverseKinematics(rbt.mfLegCmdPos); //    Postion control
+            rbt.InverseKinematics(rbt.mfTargetPos); //    Postion control
 
             // cout<<"mfJointCmdPos:"<<rbt.mfJointCmdPos;
             // cout<<"target_pos: \n"<<rbt.mfTargetPos<<endl;

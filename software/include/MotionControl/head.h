@@ -3,10 +3,12 @@
 
 // #define VMCCONTROL
 #define ForceLPF  0.9
-#define StepHeight  15.0
-#define Press  14.0
-#define TimeHeight (2.0/4.0)  // time for trajectory without vertical part
-#define swingVelFactor 3      
+#define StepHeight  15.0  //swingUp
+#define Press  14.0       //attach press
+#define CompensationDistanceA1 3     // AttitudeCorrection() Amble gait
+#define CompensationDistanceA2 7.5  
+#define CompensationDistanceA3 9  
+#define CompensationDistanceALL 5     // AttitudeCorrection() All stace phase
 #define THREAD1_ENABLE 1
 #define THREAD2_ENABLE 1
 //  1:  Motor angle
