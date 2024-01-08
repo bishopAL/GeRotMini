@@ -88,6 +88,20 @@ void CRobotControl::ParaDeliver()
     mfTargetPos = mfLegCmdPos + mfCompensation;
     #ifdef  VMCCONTROL
     CalVmcCom();
+        for(uint8_t legNum=0; legNum<4; legNum++) //{detach=0, swingUp=1, swingDown=2, attach=3, recover=4, stance=5}; 
+    {   
+        switch(m_glLeg[legNum]->GetLegStatus())
+        {
+            case 1: mfTargetForce.row(legNum) << 0, 0, 0;        //swing
+            break;
+            case 2: mfTargetForce.row(legNum) << 0, 0, 1.5;      //detach
+            break;
+            case 3: mfTargetForce.row(legNum) << 0, 0, -1.6;     //attach
+            break;
+            default:
+            break;
+        }
+    }
     #else
     
     for(uint8_t legNum=0; legNum<4; legNum++) //{detach=0, swingUp=1, swingDown=2, attach=3, recover=4, stance=5}; 
@@ -276,7 +290,8 @@ void CRobotControl::CalVmcCom()
     vfVmcb61<<m_fMass*(vfVmcAccDCom+vfGravity),m_fIxx*vfVmcAngelAccDBase[0],m_fIyy*vfVmcAngelAccDBase[1],m_fIzz*vfVmcAngelAccDBase[2];
     // cout<<"m_fMass:"<<m_fMass<<endl;
     // cout<<"vfVmcAccDCom:"<<vfVmcAccDCom<<endl;
-    // cout<<"vfGravity:"<<vfGravity<<endl;
+    //cout<<"vfGravity:"<<vfGravity<<endl;
+
     int k=3*stanceCount;
     mfTempASM.setZero();
     mfVmcS66.setIdentity(6,6);
@@ -332,7 +347,7 @@ void CRobotControl::CalVmcCom()
     }
     qpOASES::int_t nWSR = 10;
 //     cout<<"H:";
-//    for(int i=0; i<k; i++)
+//    for(int i=0; i<k; i++)W
 //    {
 //     for(int j=0; j<k; j++)
 //     {
@@ -340,12 +355,12 @@ void CRobotControl::CalVmcCom()
 //     }
 //     cout<<endl;
 //    }
-   cout<<"g:";
-   for(int i=0; i<k; i++)
-   {
-         cout<<qp_g[i]<<" ";
-   }
-    cout<<endl;
+//    cout<<"g:";
+//    for(int i=0; i<k; i++)
+//    {
+//          cout<<qp_g[i]<<" ";
+//    }
+//     cout<<endl;
 //     cout<<"ub";
 //    for(int i=0; i<k; i++)
 //    {
@@ -362,23 +377,25 @@ void CRobotControl::CalVmcCom()
     qpOASES::real_t xOpt[k];
   
 	qpPrograme.getPrimalSolution( xOpt );
-    cout<<"stanceLegNum: ";
-     for (size_t i = 0; i < stanceLegNum.size(); i++)
-     {
-        cout<<stanceLegNum[i]<<" ";
-     }
-     cout<<endl;
-     
+
+    for(int i=0;i<3*stanceCount;i+=3)
+    {
+        mfTargetForce.row(stanceLegNum[i/3])<<xOpt[i],xOpt[i+1],xOpt[i+2];
+    } 
+    // cout<<"xopt:"<<endl;  
     // for(int i=0;i<3*stanceCount;i+=3)
     // {
-    //     mfTargetForce.row(stanceLegNum[i/3])<<xOpt[i],xOpt[i+1];xOpt[i+2];
-    // } 
-    cout<<"xopt:";  
-    for(int i=0;i<3*stanceCount;i+=1)
-    {
-       cout<<xOpt[i]<<" ";
-    }
-    cout<<endl;
-   // cout<<"mfTargetForce:"<<mfTargetForce<<endl;
+    //    cout<<xOpt[i]<<" "<<xOpt[i+1]<<" "<<xOpt[i+2]<<endl;
+    // }
+    // cout<<endl;
+
+    // cout<<"stanceLegNum: ";
+    //  for (size_t i = 0; i < stanceLegNum.size(); i++)
+    //  {
+    //     cout<<stanceLegNum[i]<<" ";
+    //  }
+    //  cout<<endl;
+     
+    cout<<"mfTargetForce:"<<mfTargetForce<<endl;
 }
 #endif

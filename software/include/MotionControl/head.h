@@ -1,7 +1,7 @@
 #ifndef head_H
 #define head_H
 
-// #define VMCCONTROL
+ #define VMCCONTROL
 #define ForceLPF  0.5
 
 /* Admittance control */

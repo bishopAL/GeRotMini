@@ -77,7 +77,7 @@ void *dataSave(void *data)
     while(rbt.bInitFlag == 0) //wait for initial
         usleep(1e2);
 
-    // rbt.UpdateImuData();
+     rbt.UpdateImuData();
     // for (int i = 0; i < 3; i++)
     //     fAngleZero[i] = rbt.api.fAngle[i];
 
@@ -275,6 +275,7 @@ void *runImpCtller(void *data)
     while(rbt.bInitFlag == 0) //wait for initial
         usleep(1e2);
 
+    rbt.dxlMotors.torqueEnable();
     while (1)
     {
         if(runFlag)
@@ -361,12 +362,12 @@ int main(int argc, char ** argv)
 		printf("create pthread3 error!\n");
 		exit(1);
 	}
-    // ret = pthread_create(&th4,NULL,dataSave,NULL);
-    // if(ret != 0)
-	// {
-	// 	printf("create pthread4 error!\n");
-	// 	exit(1);
-	// }
+    ret = pthread_create(&th4,NULL,dataSave,NULL);
+    if(ret != 0)
+	{
+		printf("create pthread4 error!\n");
+		exit(1);
+	}
     
     // pthread_join(th1, NULL);
     pthread_join(th2, NULL);
