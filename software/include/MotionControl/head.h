@@ -1,15 +1,26 @@
 #ifndef head_H
 #define head_H
 
-// #define VMCCONTROL
-#define ForceLPF  0.9
-#define StepHeight_F  19.0  //swingUp
-#define StepHeight_H  14.0  //swingUp
-#define Press  16.0       //attach press
-#define CompensationDistanceA1 -2     // AttitudeCorrection() Amble gait
-#define CompensationDistanceA2 12  
-#define CompensationDistanceA3 14  
-#define CompensationDistanceALL 8     // AttitudeCorrection() All stace phase
+#define VMCCONTROL
+#define ForceLPF  0.5
+
+/* Admittance control */
+// #define StepHeight_F  17.0  //swingUp
+// #define StepHeight_H  16.0  //swingUp
+// #define Press  16.0       //attach press 
+// #define CompDisA1 -4     // Compensation of Distance in AttitudeCorrection() with Amble gait
+// #define CompDisA2 26  
+// #define CompDisA3 30  
+// #define CompDisALL 16     // Compensation of Distance  AttitudeCorrection() All stace phase
+/* Position control */
+#define StepHeight_F  16.0/1000   //swingUp
+#define StepHeight_H  14.0/1000   //swingUp
+#define Press  19.0/1000        //attach press 7
+#define CompDisA1 -2/1000   // Compensation of Distance in AttitudeCorrection() with Amble gait
+#define CompDisA2 12/1000 
+#define CompDisA3 14/1000   
+#define CompDisALL 9 /1000     // Compensation of Distance  AttitudeCorrection() All stace phase
+
 #define THREAD1_ENABLE 1
 #define THREAD2_ENABLE 1
 //  1:  Motor angle
@@ -20,9 +31,12 @@
 #define loopRateStateUpdateSend 20.0   //hz
 #define loopRateImpCtller 100.0   //hz
 #define loopRateDataSave 10 //hz
-#define VELX 4.0    // mm  step length = VELX * timeForStancePhase        
+#define VELX 6.0/1000    // mm  step length = VELX * timeForStancePhase        
 #define TimePeriod 0.05
 #define TimeForGaitPeriod 8
+#define PI 3.1415926
+
+#define PrePsotiveFactor 0.04
 #include <iostream>
 #include <vector>
 #include <Eigen/Core>

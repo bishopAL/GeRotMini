@@ -3,11 +3,16 @@
 CLeg::CLeg(enum_LEGNAME name,float L1,float L2,float L3)
 {
     m_sName=name;
-    m_fL1=L1;
-    m_fL2=L2;
-    m_fL3=L3;
+    m_fL1=L1/1000.0; // mm->m
+    m_fL2=L2/1000.0;
+    m_fL3=L3/1000.0;
 
 }
+/**
+ * @brief update m_fTheta with jointPos (preseent or cmd)
+ * 
+ * @param jointPos 
+ */
  void CLeg::SetJointPos(Matrix<float,3,1> jointPos)
  {
     m_fTheta1=jointPos[0];
@@ -37,7 +42,7 @@ Matrix<float, 3, 3> CLeg::GetJacobian()
  */
 void CLeg::UpdateJacobian()
 {
-    
+        // cout<<"theta : "<<m_fTheta1<<","<<m_fTheta2<<","<<m_fTheta3<<endl;   
        Matrix<float, 3, 3>  CHANGE; CHANGE << 0, 0, 1,
         1, 0, 0,
         0, 1, 0;
@@ -97,6 +102,11 @@ void CLeg::UpdateJacobian()
         m_mfJacobian(2, 1) = factor_Ax * cos(m_fTheta2) * m_fL1 + factor_Bx * sin(m_fTheta2 + m_fTheta3) * m_fL2;
         m_mfJacobian(2, 2) = factor_Bx * sin(m_fTheta2 + m_fTheta3) * m_fL2;
         m_mfJacobian = CHANGE * m_mfJacobian;
+       // m_mfJacobian = m_mfJacobian/1000; // mm -> m
+        //  if(m_sName==LF)
+        //  cout<<"lf1: "<<m_mfJacobian<<endl;
+        // cout<<"lf1: "<<m_fTheta1<<"/r lf2: "<<m_fTheta2<<"/r lf3: "<<m_fTheta3<<endl;
+        
     
 }
 

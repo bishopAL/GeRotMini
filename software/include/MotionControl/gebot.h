@@ -46,6 +46,7 @@ public:
     Matrix<float, 4, 3> mfJointPresVel;  // present motor 0-11
     Matrix<float, 4, 3> mfJointCmdVel; 
     Matrix<float, 1, 3> mfSwingVelocity;
+    Matrix<float, 4, 3> mfJointCompDis;  // compensation joint angle
    
     CGebot(float length,float width,float height,float mass);
     void SetInitPos(Matrix<float, 4, 3> initPosition);
@@ -82,8 +83,9 @@ public:
     //void SetTor(vector<float> setTor);
     
     void UpdateLegStatus(int legNum);
-    void AttitudeCorrection();
+    void AttitudeCorrection180();
+    void AttitudeCorrection90();
     bool BSwingPhaseStartFlag, BSwingPhaseEndFlag;
-    Matrix<float, 4, 1> mfCompensation;
+    Matrix<float, 4, 3> mfCompensation;
 
 };

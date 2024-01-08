@@ -2,19 +2,18 @@
 
 
 
-
 CGebot::CGebot(float length,float width,float height,float mass)
 {
     dxlMotors.init("/dev/ttyAMA0", 3000000, ID, 2);  // CAN NOT 4M.   ttyUSB0 ttyAMA0      
-    m_glLeg[0] = new CLeg(LF,60.0,60.0,30.0);
+    m_glLeg[0] = new CLeg(LF,60.0,60.0,30.0);  // mm
     m_glLeg[1] = new CLeg(RF,60.0,60.0,30.0);
     m_glLeg[2] = new CLeg(LH,60.0,60.0,30.0);
     m_glLeg[3] = new CLeg(RH,60.0,60.0,30.0);
-    m_fLength=length;
-    m_fWidth=width;
-    m_fHeight=height;
-    m_fMass=mass;
-    mfShoulderPos<<width/2, length/2, 0,width/2, -length/2,0, -width/2, length/2,0,-width/2, -length/2,0;  // X-Y: LF, RF, LH, RH
+    m_fLength=length/1000.0;
+    m_fWidth=width/1000.0;
+    m_fHeight=height/1000.0;
+    m_fMass=mass/1000.0; //g->kg
+    mfShoulderPos<<m_fWidth/2, m_fLength/2, 0,m_fWidth/2, -m_fLength/2,0, -m_fWidth/2, m_fLength/2,0,-m_fWidth/2, -m_fLength/2,0;  // X-Y: LF, RF, LH, RH
 
     fSwingPhaseStatusPart[0]=0.3; //detach
     fSwingPhaseStatusPart[1]=0.2; //swingUp
@@ -26,6 +25,7 @@ CGebot::CGebot(float length,float width,float height,float mass)
     BSwingPhaseStartFlag = true;
     BSwingPhaseEndFlag = 0;     //
     mfCompensation.setZero();
+    mfJointCompDis.setZero();
 
     for(int i=0;i<12;++i)
         vLastSetPos.push_back(0);
@@ -209,7 +209,7 @@ void CGebot::UpdatejointPresPos()
     mfJointPresPos=inverseMotorMapping(dxlMotors.present_position);
     for(int legNum=0;legNum<4;legNum++)
     {   
-        Matrix<float,3,1> temp=mfJointCmdPos.block(legNum,0,1,3).transpose();
+        Matrix<float,3,1> temp=mfJointPresPos.block(legNum,0,1,3).transpose();
         m_glLeg[legNum]->SetJointPos(temp);
     }
   
@@ -344,13 +344,13 @@ void CGebot::NextStep()
  */
 void CGebot::ForwardKinematics(int mode)
 {
-    if(mode=0)
-    for(int legNum=0;legNum<4;legNum++)
-        mfLegCmdPos.row(legNum)=m_glLeg[legNum]->ForwardKinematic().transpose();
+    if(mode==0)
+        for(int legNum=0;legNum<4;legNum++)
+            mfLegCmdPos.row(legNum)=m_glLeg[legNum]->ForwardKinematic().transpose();    // need SetJointPos(jointCmdPos)
     else{
         mfLegLastPos=mfLegPresPos;
         for(int legNum=0;legNum<4;legNum++)
-        mfLegPresPos.row(legNum)=m_glLeg[legNum]->ForwardKinematic().transpose();  
+            mfLegPresPos.row(legNum)=m_glLeg[legNum]->ForwardKinematic().transpose();  // need SetJointPos(jointPresPos)
     }
 }
 
@@ -449,17 +449,22 @@ void CGebot::AirControl()
         }
         else if(m_glLeg[legNum]->GetLegStatus()==stance)// Apply negative pressure in advance to solve gas path delay.
         {
-            if(iStatusCounter[legNum] <= ceil(iStatusCounterBuffer[legNum][int(stance)] * 0.06) )   
+            if(iStatusCounter[legNum] <= ceil(iStatusCounterBuffer[legNum][int(stance)] * PrePsotiveFactor) )   
+            {
                 PumpPositive(legNum);
+                BSwingPhaseStartFlag = true;
+            }    
         }
+        else if(m_glLeg[legNum]->GetLegStatus()==detach)
+            PumpPositive(legNum);
         //cout<<"svStatus:"<<std::setw(2)<<svStatus<<endl;
     }
 }
 /**
  * @brief Correct body tilt.
- * Notice: Applicable to amble gait
+ * Notice: Applicable to amble gait in 180 degree
  */
-void CGebot::AttitudeCorrection()
+void CGebot::AttitudeCorrection180()
 {
     int legNum;
     if(BSwingPhaseStartFlag == true )
@@ -476,18 +481,60 @@ void CGebot::AttitudeCorrection()
                 switch (legNum) //the number of swing leg is only 1 in amble gait   
                 {
                 case 0:
-                    mfCompensation<< 0, CompensationDistanceA3, CompensationDistanceA2, CompensationDistanceA1;
+                    mfCompensation(0,2) = 0;
+                    mfCompensation(1,2) = CompDisA3;
+                    mfCompensation(2,2) = CompDisA2;
+                    mfCompensation(3,2) = CompDisA1;
                     break;
                 case 1:
-                    mfCompensation<< CompensationDistanceA3, 0, CompensationDistanceA1, CompensationDistanceA2;
+                    mfCompensation(0,2) = CompDisA3;
+                    mfCompensation(1,2) = 0;
+                    mfCompensation(2,2) = CompDisA1;
+                    mfCompensation(3,2) = CompDisA2;
                     break;
                 case 2:
-                    mfCompensation<< CompensationDistanceA2, CompensationDistanceA1, 0, CompensationDistanceA3;
+                    mfCompensation(0,2) = CompDisA2;
+                    mfCompensation(1,2) = CompDisA1;
+                    mfCompensation(2,2) = 0;
+                    mfCompensation(3,2) = CompDisA3;
                     break;
                 case 3:
-                    mfCompensation<< CompensationDistanceA1, CompensationDistanceA2, CompensationDistanceA3, 0;
+                    mfCompensation(0,2) = CompDisA1;
+                    mfCompensation(1,2) = CompDisA2;
+                    mfCompensation(2,2) = CompDisA3;
+                    mfCompensation(3,2) = 0;
                     break;
                 }
+                break;
+             case stance:
+                if(iStatusCounter[legNum] <= ceil(iStatusCounterBuffer[legNum][int(stance)] * PrePsotiveFactor) )   
+                    switch (legNum) //the number of swing leg is only 1 in amble gait   
+                    {
+                    case 0:
+                        mfCompensation(0,2) = 0;
+                        mfCompensation(1,2) = CompDisA3;
+                        mfCompensation(2,2) = CompDisA2;
+                        mfCompensation(3,2) = CompDisA1;
+                        break;
+                    case 1:
+                        mfCompensation(0,2) = CompDisA3;
+                        mfCompensation(1,2) = 0;
+                        mfCompensation(2,2) = CompDisA1;
+                        mfCompensation(3,2) = CompDisA2;
+                        break;
+                    case 2:
+                        mfCompensation(0,2) = CompDisA2;
+                        mfCompensation(1,2) = CompDisA1;
+                        mfCompensation(2,2) = 0;
+                        mfCompensation(3,2) = CompDisA3;
+                        break;
+                    case 3:
+                        mfCompensation(0,2) = CompDisA1;
+                        mfCompensation(1,2) = CompDisA2;
+                        mfCompensation(2,2) = CompDisA3;
+                        mfCompensation(3,2) = 0;
+                        break;
+                    }
                 break;
             }
         }
@@ -495,8 +542,98 @@ void CGebot::AttitudeCorrection()
     if(BSwingPhaseEndFlag == true )
     {
         BSwingPhaseEndFlag = 0;
-        mfCompensation<< CompensationDistanceALL, CompensationDistanceALL, CompensationDistanceALL, CompensationDistanceALL;
+        mfCompensation(0,2) = CompDisALL;
+        mfCompensation(1,2) = CompDisALL;
+        mfCompensation(2,2) = CompDisALL;
+        mfCompensation(3,2) = CompDisALL;
     }
 
 }
 
+void CGebot::AttitudeCorrection90()
+{
+    int legNum;
+    // float attX=-4, attZ=6, attALLx=-3;           //p
+    float attX=-4*2.5/1000, attZ=6*3/1000, attALLx=-3*2.5/1000;  //adm
+    if(BSwingPhaseStartFlag == true )
+    {
+        BSwingPhaseStartFlag = 0;
+        for(legNum=0;legNum<4;legNum++)
+        {
+            switch(m_glLeg[legNum]->GetLegStatus()) // select swing leg
+            {
+            case detach:
+            case swingUp:
+            case swingDown:
+            case attach:
+                switch (legNum) //the number of swing leg is only 1 in amble gait   
+                {
+                case 0:
+                    mfCompensation<< 0, 0, 0, 
+                                    attX, 0, attZ, 
+                                    attX, 0, 0, 
+                                    attX, 0, 0;
+                    break;
+                case 1:
+                    mfCompensation<< attX, 0, attZ, 
+                                     0, 0, 0, 
+                                    attX, 0, 0, 
+                                    attX, 0, 0;
+                    break;
+                case 2:
+                    mfCompensation<<attX, 0, 0, 
+                                    attX, 0, 0, 
+                                     0, 0, 0, 
+                                    attX, 0, 0;
+                    break;
+                case 3:
+                    mfCompensation<<attX, 0, 0, 
+                                    attX, 0, 0, 
+                                    attX, 0, 0, 
+                                     0, 0, 0;
+                    break;
+                }
+                break;
+             case stance:
+                if(iStatusCounter[legNum] <= ceil(iStatusCounterBuffer[legNum][int(stance)] * PrePsotiveFactor) )   
+                    switch (legNum) //the number of swing leg is only 1 in amble gait   
+                    {
+                    case 0:
+                        mfCompensation<< 0, 0, 0, 
+                                        attX, 0, attZ, 
+                                        attX, 0, 0, 
+                                        attX, 0, 0;
+                        break;
+                    case 1:
+                        mfCompensation<< attX, 0, attZ, 
+                                         0, 0, 0, 
+                                        attX, 0, 0, 
+                                        attX, 0, 0;
+                        break;
+                    case 2:
+                        mfCompensation<<attX, 0, 0, 
+                                        attX, 0, 0, 
+                                         0, 0, 0, 
+                                        attX, 0, 0;
+                        break;
+                    case 3:
+                        mfCompensation<<attX, 0, 0, 
+                                        attX, 0, 0, 
+                                        attX, 0, 0, 
+                                         0, 0, 0;
+                        break;
+                    }
+                break;
+            }
+        }
+    }
+    if(BSwingPhaseEndFlag == true )
+    {
+        BSwingPhaseEndFlag = 0;
+        mfCompensation<<attALLx, 0, attZ/2.0, 
+                        attALLx, 0, attZ/2.0, 
+                        attALLx, 0, 0, 
+                        attALLx, 0, 0;
+    }
+
+}
