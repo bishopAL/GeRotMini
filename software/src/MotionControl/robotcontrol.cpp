@@ -59,7 +59,6 @@ void CRobotControl::UpdateImuData()
 
 void CRobotControl::UpdateFtsPresForce()
 {
-    mfLastForce = mfForce;
     Matrix<float, 3, 4> temp;
     if(mfForce(2,3) - mfLastForce(2,3) > 0.3 || mfForce(2,3) - mfLastForce(2,3) < -0.3)
         temp.setZero();
@@ -71,7 +70,7 @@ void CRobotControl::UpdateFtsPresForce()
         mfForce.col(i) = ForceLPF * mfLastForce.col(i) + (1-ForceLPF) * m_glLeg[i]->GetJacobian().transpose().inverse() * temp.col(i);
         // cout<<m_glLeg[i]->GetJacobian().transpose().inverse() <<" ";
     }  
-
+    mfLastForce = mfForce;
 }
 
 void CRobotControl::UpdateTargTor(Matrix<float, 3, 4> force)
@@ -86,12 +85,10 @@ void CRobotControl::UpdateTargTor(Matrix<float, 3, 4> force)
  */
 void CRobotControl::ParaDeliver()
 {
+    mfTargetPos = mfLegCmdPos + mfCompensation;
     #ifdef  VMCCONTROL
     CalVmcCom();
     #else
-
-    // mfTargetPos = mfLegCmdPos;
-    mfTargetPos = mfLegCmdPos + mfCompensation;
     
     for(uint8_t legNum=0; legNum<4; legNum++) //{detach=0, swingUp=1, swingDown=2, attach=3, recover=4, stance=5}; 
     {   

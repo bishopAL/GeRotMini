@@ -189,24 +189,6 @@ void *robotStateUpdateSend(void *data)
                         12*TimeForGaitPeriod/16, 	15*TimeForGaitPeriod/16,		
                         4*TimeForGaitPeriod/16, 	7*TimeForGaitPeriod/16;
     rbt.SetPhase(TimePeriod, TimeForGaitPeriod, TimeForSwingPhase);
-   
-//    for (size_t i = 0; i < 4; i++)
-//    {
-//     cout<<rbt.iStatusCounter[i]<<endl;
-//     cout<<"legstatus_"<<i<<": "<<(rbt.m_glLeg[i]->GetLegStatus())<<endl;
-//    }
-// for (size_t i = 0; i < 4; i++)
-// {
-//     for (size_t j = 0; j < 6; j++)
-//     {
-//         cout<<rbt.iStatusCounterBuffer[i][j]<<",";
-//     }
-//     cout<<endl;
-// }
-
-   
-   
-//    cout<<rbt.mfTimeForSwingPhase<<endl;
 
 #if(INIMODE==2)
 //    float  float_initPos[12]={    60, 60, -30,
@@ -222,6 +204,11 @@ void *robotStateUpdateSend(void *data)
 //  80, -50, -22,
 // -40,  50, -22,
 // -40, -50, -23,
+
+//  80,  55, -16,
+//  80, -55, -16,
+// -40,  55, -16,
+// -40, -69, -18,
     float  float_initPos[12];
     string2float("../include/initPos.csv", float_initPos);//Foot end position
     for(int i=0; i<4; i++)
@@ -240,14 +227,6 @@ void *robotStateUpdateSend(void *data)
   
 #if(INIMODE==2)  
     rbt.SetPos(rbt.mfJointCmdPos);
-    // cout<<rbt.mfJointCmdPos<<endl<<endl;
-    //  rbt.dxlMotors.getPosition();
-    // cout<<"pos :";
-    // for (size_t i = 0; i < 12; i++)
-    // {    
-       
-    // cout<<" "<<rbt.dxlMotors.present_position[i]<<endl;
-    // }
     
 #endif
     usleep(1e5);
@@ -267,12 +246,12 @@ void *robotStateUpdateSend(void *data)
             //If stay static, annotate below one line.
             rbt.NextStep();
             rbt.AirControl();
-            rbt.AttitudeCorrection90();
+            // rbt.AttitudeCorrection90();
             
             rbt.ParaDeliver();
             
             // rbt.UpdateImuData();     // segmentation fault
-             //cout<<"LegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;    
+            //cout<<"LegCmdPos:\n"<<rbt.mfLegCmdPos<<endl;    
             // cout<<"TargetPos:\n"<<rbt.mfTargetPos<<endl<<endl; 
             // cout<<"Compensation:\n"<<rbt.mfCompensation<<endl<<endl; 
 
@@ -318,9 +297,6 @@ void *runImpCtller(void *data)
             //     torque[i] = rbt.dxlMotors.present_torque[i];
             // }            
 
-            // rbt.UpdateImuData();
-
-            //rbt.mfTargetPos<<rbt.mfInitFootPos;
 
             /*      Admittance control     */ 
             rbt.Control();   
@@ -329,7 +305,12 @@ void *runImpCtller(void *data)
             /*      Postion control with Comp      */
             // rbt.InverseKinematics(rbt.mfTargetPos); //    Postion control
 
+            /*      Postion control      */
+            // rbt.InverseKinematics(rbt.mfLegCmdPos); 
+
+
             // cout<<"mfJointCmdPos:"<<rbt.mfJointCmdPos;
+            // cout<<"mfLegCmdPos: \n"<<rbt.mfLegCmdPos<<endl;
             // cout<<"target_pos: \n"<<rbt.mfTargetPos<<endl;
             // cout<<"legPresPos: \n"<<rbt.mfLegPresPos<<"; \nxc: \n"<<rbt.xc<<endl;
             // cout<<"force:"<<endl<<rbt.mfForce.transpose()<<endl;
@@ -337,7 +318,7 @@ void *runImpCtller(void *data)
             // cout<<endl;
 
             /*      Set joint angle      */
-           // rbt.SetPos(rbt.mfJointCmdPos);
+           rbt.SetPos(rbt.mfJointCmdPos);
 
             /*      Impedance control      */
             // for(int i=0; i<4; i++)  
@@ -380,12 +361,12 @@ int main(int argc, char ** argv)
 		printf("create pthread3 error!\n");
 		exit(1);
 	}
-    ret = pthread_create(&th4,NULL,dataSave,NULL);
-    if(ret != 0)
-	{
-		printf("create pthread4 error!\n");
-		exit(1);
-	}
+    // ret = pthread_create(&th4,NULL,dataSave,NULL);
+    // if(ret != 0)
+	// {
+	// 	printf("create pthread4 error!\n");
+	// 	exit(1);
+	// }
     
     // pthread_join(th1, NULL);
     pthread_join(th2, NULL);

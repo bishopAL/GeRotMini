@@ -1,17 +1,17 @@
 #ifndef head_H
 #define head_H
 
-#define VMCCONTROL
+// #define VMCCONTROL
 #define ForceLPF  0.5
 
 /* Admittance control */
-// #define StepHeight_F  17.0  //swingUp
-// #define StepHeight_H  16.0  //swingUp
-// #define Press  16.0       //attach press 
-// #define CompDisA1 -4     // Compensation of Distance in AttitudeCorrection() with Amble gait
-// #define CompDisA2 26  
-// #define CompDisA3 30  
-// #define CompDisALL 16     // Compensation of Distance  AttitudeCorrection() All stace phase
+// #define StepHeight_F  17.0*0.001  //swingUp
+// #define StepHeight_H  16.0*0.001  //swingUp
+// #define Press  16.0*0.001       //attach press 
+// #define CompDisA1 -4*0.001     // Compensation of Distance in AttitudeCorrection() with Amble gait
+// #define CompDisA2 26*0.001  
+// #define CompDisA3 30*0.001  
+// #define CompDisALL 16*0.001     // Compensation of Distance  AttitudeCorrection() All stace phase
 /* Position control */
 #define StepHeight_F  16.0/1000   //swingUp
 #define StepHeight_H  14.0/1000   //swingUp

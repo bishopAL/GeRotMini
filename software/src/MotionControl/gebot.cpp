@@ -13,7 +13,7 @@ CGebot::CGebot(float length,float width,float height,float mass)
     m_fWidth=width/1000.0;
     m_fHeight=height/1000.0;
     m_fMass=mass/1000.0; //g->kg
-    mfShoulderPos<<m_fWidth/2, m_fLength/2, 0,m_fWidth/2, -m_fLength/2,0, -m_fWidth/2, m_fLength/2,0,-m_fWidth/2, -m_fLength/2,0;  // X-Y: LF, RF, LH, RH
+    mfShoulderPos<<m_fWidth/2, m_fLength/2, 0,1,m_fWidth/2, -m_fLength/2,0,1, -m_fWidth/2, m_fLength/2,0,1,-m_fWidth/2, -m_fLength/2,0,1;  // X-Y: LF, RF, LH, RH
 
     fSwingPhaseStatusPart[0]=0.3; //detach
     fSwingPhaseStatusPart[1]=0.2; //swingUp
@@ -272,15 +272,21 @@ void CGebot::NextStep()
                 targetCoMPosition(legNum, pos) += vfTargetCoMVelocity(pos) * fTimePeriod;
                 targetCoMPosture(legNum,pos) +=vfTargetCoMVelocity(pos+3)*fTimePeriod;
             }
-            Matrix<float, 3, 3> trans;
-            trans<<cos(targetCoMPosture(legNum,2)), -sin(targetCoMPosture(legNum,2)), targetCoMPosition(legNum,0),
-                sin(targetCoMPosture(legNum,2)), cos(targetCoMPosture(legNum,2)), targetCoMPosition(legNum,1),
-                0, 0, 1;
-            Matrix<float, 3, 1> oneShoulderPos_3x1;
-            oneShoulderPos_3x1<<mfShoulderPos(legNum,0), mfShoulderPos(legNum,1), 1;
-            oneShoulderPos_3x1 = trans * oneShoulderPos_3x1;
+            Matrix<float, 4, 4> trans;
+            trans<<cos(targetCoMPosture(legNum,2)), -sin(targetCoMPosture(legNum,2)),0, targetCoMPosition(legNum,0),
+                sin(targetCoMPosture(legNum,2)), cos(targetCoMPosture(legNum,2)),0, targetCoMPosition(legNum,1),
+                0,0,1,targetCoMPosition(legNum,2),
+                0, 0, 0, 1;
+            Matrix<float, 4, 1> oneShoulderPos_4x1;
+            oneShoulderPos_4x1<<mfShoulderPos(legNum,0), mfShoulderPos(legNum,1),0,1;
+            oneShoulderPos_4x1 = trans * oneShoulderPos_4x1;
             for (size_t i = 0; i < 3; i++)
-                mfLegCmdPos(legNum, i) = mfStancePhaseStartPos(legNum, i) + (mfShoulderPos(legNum, i) - oneShoulderPos_3x1(i));
+            {
+                mfLegCmdPos(legNum, i) = mfStancePhaseStartPos(legNum, i) + (mfShoulderPos(legNum, i) - oneShoulderPos_4x1(i));
+                //  cout<<"mfStancePhaseStartPos(legNum, i): \n"<<mfStancePhaseStartPos(legNum, i)<<endl;
+                //  cout<<"oneShoulderPos_3x1("<<i<<")"<<oneShoulderPos_4x1(i)<<endl;
+                //  cout<<"mfShoulderPos(legNum,"<<i<<")"<<mfShoulderPos(legNum, i)<<endl;
+            }
         }
         else if( ls == detach || ls == swingUp )   //swing phase 
         {
@@ -289,6 +295,7 @@ void CGebot::NextStep()
             if(mfSwingVelocity( 0, 0) == 0)      //first step
             {
                 mfLegCmdPos(legNum, 2) += fStepHeight / (iStatusCounterBuffer[legNum][(int)detach] + iStatusCounterBuffer[legNum][(int)swingUp]);
+                
             }
             else 
             {            
@@ -305,6 +312,7 @@ void CGebot::NextStep()
                 /* z = -k * ( x - xh )^2 + H + z0 */
                 k = fStepHeight / xh / xh;
                 mfLegCmdPos(legNum, 2) = -k * (x - xh) * (x - xh) + fStepHeight + mfStancePhaseEndPos(legNum, 2);
+               
             }
         }
         else if( ls == swingDown )    //swing phase
@@ -314,7 +322,9 @@ void CGebot::NextStep()
                 for(uint8_t pos=0; pos<2; pos++)
                     mfLegCmdPos(legNum, pos) += mfSwingVelocity(pos) ;
             }   
+            
             mfLegCmdPos(legNum, 2) -= fStepHeight / iStatusCounterBuffer[legNum][(int)ls];
+             
         }
         else if( ls == attach )    //swing phase
         {
